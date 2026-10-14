@@ -1,0 +1,303 @@
+=====================================================================
+JAVASCRIPT ASSIGNMENT 1 - SOLUTIONS
+Run each program with Node.js (node q1.js) or in the browser console.
+Each section below is a separate file (q1.js ... q10.js).
+=====================================================================
+
+
+---------------------------------------------------------------------
+FILE: q1.js  -  Personalized Login Greeting
+---------------------------------------------------------------------
+
+// Variable for the user's name
+const userName = "Ansh";
+
+// Get the current hour (0-23) from the system clock
+const currentHour = new Date().getHours();
+
+// Variable to store the greeting message
+let greeting;
+
+if (currentHour < 12) {
+  // Before 12 PM
+  greeting = `Good Morning ${userName}!`;
+} else if (currentHour >= 12 && currentHour <= 17) {
+  // Between 12 PM and 5 PM
+  greeting = `Good Afternoon ${userName}!`;
+} else {
+  // Otherwise (evening / night)
+  greeting = `Good Evening ${userName}!`;
+}
+
+console.log(greeting);
+
+
+---------------------------------------------------------------------
+FILE: q2.js  -  Multi-Type Data Summary
+---------------------------------------------------------------------
+
+// Variables of different data types
+const userName = "Ansh Shukla";                       // string
+const userAge = 21;                                   // number
+const isStudent = true;                               // boolean
+const subjects = ["JavaScript", "DBMS", "Networks"];  // array
+const userProfile = { city: "Mathura", year: 3 };     // object
+const middleName = null;                              // null
+let phoneNumber;                                      // undefined
+
+// Helper function: returns the correct type name for any value.
+// typeof null gives "object" (a known JS quirk) and typeof [] also
+// gives "object", so we handle null and arrays separately.
+function getType(value) {
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "array";
+  return typeof value;
+}
+
+// Build the report rows: label + value + type
+const report = [
+  { label: "userName",    value: userName,    type: getType(userName) },
+  { label: "userAge",     value: userAge,     type: getType(userAge) },
+  { label: "isStudent",   value: isStudent,   type: getType(isStudent) },
+  { label: "subjects",    value: JSON.stringify(subjects),    type: getType(subjects) },
+  { label: "userProfile", value: JSON.stringify(userProfile), type: getType(userProfile) },
+  { label: "middleName",  value: middleName,  type: getType(middleName) },
+  { label: "phoneNumber", value: phoneNumber, type: getType(phoneNumber) }
+];
+
+// One single console.table() statement prints the whole report
+console.table(report);
+
+
+---------------------------------------------------------------------
+FILE: q3.js  -  Monthly Expense Tracker
+---------------------------------------------------------------------
+
+// Expenses for 5 categories: food, travel, rent, bills, leisure
+const expenses = [4500, 2000, 12000, 3000, 1500];
+
+// Add all expenses using a loop and the += assignment operator
+let total = 0;
+for (let i = 0; i < expenses.length; i++) {
+  total += expenses[i];
+}
+
+// Average expense per category
+const average = total / expenses.length;
+
+// Add 10% tax to the total using arithmetic + assignment operators
+let finalAmount = total;
+finalAmount += total * 0.10;
+
+// toFixed(2) rounds values to 2 decimal places
+console.log("Total Expense      : " + total.toFixed(2));
+console.log("Average Expense    : " + average.toFixed(2));
+console.log("Final Amount (+10% tax): " + finalAmount.toFixed(2));
+
+
+---------------------------------------------------------------------
+FILE: q4.js  -  Academic Performance Evaluator
+---------------------------------------------------------------------
+
+// Marks of 5 subjects (each out of 100)
+const marks = [78, 85, 92, 66, 88];
+const maxMarksPerSubject = 100;
+
+// Calculate total marks
+let totalMarks = 0;
+for (let i = 0; i < marks.length; i++) {
+  totalMarks += marks[i];
+}
+
+// Average marks and overall percentage
+const average = totalMarks / marks.length;
+const percentage = (totalMarks / (marks.length * maxMarksPerSubject)) * 100;
+
+// Validation: check if any subject is below 35
+let failedAnySubject = false;
+for (let i = 0; i < marks.length; i++) {
+  if (marks[i] < 35) {
+    failedAnySubject = true;
+    break;
+  }
+}
+
+console.log("Average    : " + average.toFixed(2));
+console.log("Percentage : " + percentage.toFixed(2) + "%");
+
+// Decide result using logical operators
+if (failedAnySubject || percentage < 50) {
+  console.log("Detained");
+} else if (percentage >= 85) {
+  console.log("Promoted with Distinction");
+} else if (percentage >= 50 && percentage < 85) {
+  console.log("Promoted");
+}
+
+
+---------------------------------------------------------------------
+FILE: q5.js  -  Weather Activity Planner
+---------------------------------------------------------------------
+
+// Weather variables (change these to test different cases)
+const temperature = 28;   // in degrees Celsius
+const isRaining = false;
+const windSpeed = 10;     // in km/h
+
+if (isRaining) {
+  console.log("Stay indoors with hot coffee.");
+} else if (temperature > 35) {
+  console.log("Go swimming.");
+} else if (temperature < 15 && windSpeed > 20) {
+  console.log("Too cold and windy - stay home.");
+} else {
+  console.log("Perfect day for a walk.");
+}
+
+
+---------------------------------------------------------------------
+FILE: q6.js  -  Progressive Discount System
+---------------------------------------------------------------------
+
+// Total purchase amount
+const totalAmount = 6500;
+
+// Discount percentage based on tiers
+let discountPercent;
+
+if (totalAmount >= 10000) {
+  discountPercent = 25;
+} else if (totalAmount >= 5000) {
+  discountPercent = 15;
+} else if (totalAmount >= 2000) {
+  discountPercent = 5;
+} else {
+  discountPercent = 0;
+}
+
+// Calculate the discount and the final price (rounded)
+const discountAmount = (totalAmount * discountPercent) / 100;
+const finalPrice = Math.round(totalAmount - discountAmount);
+
+console.log("Original Total      : Rs. " + totalAmount);
+console.log("Discount Percentage : " + discountPercent + "%");
+console.log("Final Price         : Rs. " + finalPrice);
+
+
+---------------------------------------------------------------------
+FILE: q7.js  -  Smart Guessing Game (Number Range)
+---------------------------------------------------------------------
+
+// Random secret number between 1 and 50
+const secretNumber = Math.floor(Math.random() * 50) + 1;
+
+// Test value for the user's guess (change it to test)
+const userGuess = 25;
+
+console.log("Secret Number (for testing): " + secretNumber);
+console.log("Your Guess: " + userGuess);
+
+if (userGuess === secretNumber) {
+  console.log("Correct guess!");
+} else {
+  // Nested if: guess is wrong, now check how close it is
+  if (userGuess >= secretNumber - 3 && userGuess <= secretNumber + 3) {
+    console.log("Very close!");
+  } else if (userGuess > secretNumber) {
+    console.log("Too high");
+  } else {
+    console.log("Too low");
+  }
+}
+
+
+---------------------------------------------------------------------
+FILE: q8.js  -  Employee Salary Projection
+---------------------------------------------------------------------
+
+// Current salary and annual increment rate (in %)
+let salary = 500000;
+const incrementRate = 8;
+
+// Array to store the yearly projection for console.table()
+const projection = [];
+
+for (let year = 1; year <= 5; year++) {
+  // Apply increment using assignment operator
+  salary += (salary * incrementRate) / 100;
+
+  projection.push({
+    Year: year,
+    "Salary (Rs.)": Math.round(salary)   // rounding applied
+  });
+}
+
+console.table(projection);
+
+
+---------------------------------------------------------------------
+FILE: q9.js  -  Random Math Quiz Generator
+---------------------------------------------------------------------
+
+// Generate two random numbers between 1 and 20
+const num1 = Math.floor(Math.random() * 20) + 1;
+const num2 = Math.floor(Math.random() * 20) + 1;
+
+// Pick a random operator from the array
+const operators = ['+', '-', '*', '/'];
+const operator = operators[Math.floor(Math.random() * operators.length)];
+
+// Calculate the correct answer using a switch statement
+let answer;
+
+switch (operator) {
+  case '+':
+    answer = num1 + num2;
+    break;
+  case '-':
+    answer = num1 - num2;
+    break;
+  case '*':
+    answer = num1 * num2;
+    break;
+  case '/':
+    // Division rounded to two decimals
+    answer = (num1 / num2).toFixed(2);
+    break;
+  default:
+    answer = "Invalid operator";
+}
+
+console.log(`Question: What is ${num1} ${operator} ${num2} ?`);
+console.log(`Correct Answer: ${answer}`);
+
+
+---------------------------------------------------------------------
+FILE: q10.js  -  Citizen Eligibility Validator
+---------------------------------------------------------------------
+
+// NOTE: The assignment lists "citizen and age >= 18" for ALL services and
+// also "citizen and 18-20" for vote only. These overlap, so this solution
+// treats "all services" as citizen with age >= 21 and "vote only" as
+// citizen aged 18-20 (so every outcome is reachable).
+// If your teacher wants age >= 18 for "all services", change 21 to 18.
+
+// Inputs (change these to test)
+const age = 19;
+const isCitizen = true;
+
+if (isCitizen) {
+  if (age >= 21) {
+    console.log("Eligible for all services.");
+  } else if (age >= 18 && age <= 20) {
+    console.log("Eligible to vote only.");
+  } else {
+    console.log("Not eligible yet.");
+  }
+} else {
+  if (age >= 18) {
+    console.log("Only age criteria met.");
+  } else {
+    console.log("Not eligible yet.");
+  }
+}
