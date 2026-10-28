@@ -1,0 +1,401 @@
+==========================================================================
+ASSIGNMENT 5 - JAVASCRIPT SOLUTIONS (Q1 - Q9)
+==========================================================================
+How to use:
+  * Each question below is a separate file. The file name is shown in the
+    header (q1.js, q2.js ...). Copy each block into its own file.
+  * Run with Node.js:   node q1.js
+  * Core JavaScript (ES6+) only, no frameworks.
+==========================================================================
+
+
+
+##########################################################################
+Q1 - Callback Flow                  (file: q1.js)
+##########################################################################
+
+// Callback function: runs AFTER the greeting is printed
+function showEndMessage() {
+  console.log("Welcome to the course!");
+}
+
+// greetUser receives another function (callback) as an argument
+function greetUser(name, callback) {
+  console.log(`Hello ${name}`);   // Step 1: greeting is printed first
+  callback();                     // Step 2: then the callback is executed
+}
+
+console.log("Program started");   // Flow: 1
+greetUser("Ansh", showEndMessage);// Flow: 2 (greeting) -> 3 (callback)
+console.log("Program finished");  // Flow: 4
+
+// NOTE: we pass showEndMessage WITHOUT () so the function itself is passed.
+// Writing showEndMessage() would call it immediately and pass its result.
+// Output:
+//   Program started
+//   Hello Ansh
+//   Welcome to the course!
+//   Program finished
+
+
+
+##########################################################################
+Q2 - applyOperation with Callbacks  (file: q2.js)
+##########################################################################
+
+// Takes an array and a callback; applies the callback to every element
+function applyOperation(numbers, operation) {
+  const result = [];
+  for (let i = 0; i < numbers.length; i++) {
+    result.push(operation(numbers[i])); // callback decides what happens
+  }
+  return result;
+}
+
+// Callback 1: double a number
+const double = (num) => num * 2;
+
+// Callback 2: square a number
+const square = (num) => num * num;
+
+const numbers = [1, 2, 3, 4];
+
+console.log("Original :", numbers);
+console.log("Doubled  :", applyOperation(numbers, double)); // [2, 4, 6, 8]
+console.log("Squared  :", applyOperation(numbers, square)); // [1, 4, 9, 16]
+
+// Inline callback also works:
+console.log("Plus 10  :", applyOperation(numbers, (n) => n + 10)); // [11, 12, 13, 14]
+
+
+
+##########################################################################
+Q3 - Arrow Function and "this"      (file: q3.js)
+##########################################################################
+
+// ---- Problem: arrow function as a method ----
+const user = {
+  name: "Ansh",
+  showName: () => {
+    console.log("Arrow function  ->", this.name);
+  }
+};
+user.showName(); // undefined
+
+// WHY IS this.name UNDEFINED?
+// Arrow functions do NOT have their own "this". They take "this" from the
+// scope where they were WRITTEN (lexical this), not from the object that
+// calls them. Here the arrow function is written at the top level of the
+// file, so "this" is the module-level this (an empty object {} in Node.js,
+// or the window object in a browser). That object has no "name" property
+// with our value, so this.name is undefined. The object literal { } does
+// NOT create a new "this" scope.
+
+// ---- Fix: use a normal function ----
+const userFixed = {
+  name: "Ansh",
+  showName: function () {
+    console.log("Normal function ->", this.name);
+  }
+};
+userFixed.showName(); // Ansh
+
+// A normal function gets "this" from HOW it is called. Since it is called as
+// userFixed.showName(), "this" is the object before the dot (userFixed).
+// Shorter method syntax works the same way:
+const userShort = {
+  name: "Ansh",
+  showName() {
+    console.log("Method syntax   ->", this.name);
+  }
+};
+userShort.showName(); // Ansh
+
+
+
+##########################################################################
+Q4 - Constructor Function and Prototype Method  (file: q4.js)
+##########################################################################
+
+// Constructor function: sets properties on each new object
+function Car(brand, model) {
+  this.brand = brand;
+  this.model = model;
+}
+
+// Method added to the prototype: stored ONCE and shared by all cars
+Car.prototype.getDetails = function () {
+  console.log(`Car: ${this.brand} ${this.model}`);
+};
+
+const car1 = new Car("Toyota", "Fortuner");
+const car2 = new Car("Hyundai", "Creta");
+
+car1.getDetails(); // Car: Toyota Fortuner
+car2.getDetails(); // Car: Hyundai Creta
+
+// ---- Proof of method sharing via prototype ----
+console.log("Same method shared?      ", car1.getDetails === car2.getDetails);          // true
+console.log("Method on car1 itself?   ", car1.hasOwnProperty("getDetails"));            // false
+console.log("Method on Car.prototype? ", Car.prototype.hasOwnProperty("getDetails"));   // true
+console.log("car1 prototype is Car.prototype?", Object.getPrototypeOf(car1) === Car.prototype); // true
+
+// Both objects have their OWN data (brand, model) but SHARE one copy of the
+// method, which saves memory compared to defining the method inside the
+// constructor for every object.
+
+
+
+##########################################################################
+Q5 - Person and Student Inheritance  (file: q5.js)
+##########################################################################
+
+// ---- Parent constructor ----
+function Person(name) {
+  this.name = name;
+}
+Person.prototype.printName = function () {
+  console.log(`Name: ${this.name}`);
+};
+
+// ---- Child constructor ----
+function Student(name, branch) {
+  Person.call(this, name); // borrow Person's constructor to set this.name
+  this.branch = branch;
+}
+
+// Link the prototype chain: Student.prototype -> Person.prototype
+Student.prototype = Object.create(Person.prototype);
+Student.prototype.constructor = Student; // restore the constructor reference
+
+Student.prototype.printBranch = function () {
+  console.log(`Branch: ${this.branch}`);
+};
+
+// Prints both name (inherited method) and branch (own method)
+Student.prototype.printDetails = function () {
+  this.printName();    // found up the chain on Person.prototype
+  this.printBranch();  // found on Student.prototype
+};
+
+const student1 = new Student("Ansh", "Computer Science");
+student1.printDetails();
+
+// ---- Demonstrate the prototype chain ----
+console.log("\n--- Prototype chain ---");
+console.log("student1 instanceof Student:", student1 instanceof Student); // true
+console.log("student1 instanceof Person :", student1 instanceof Person);  // true
+console.log("Own properties:", Object.keys(student1)); // [ 'name', 'branch' ]
+console.log("Object.getPrototypeOf(student1) === Student.prototype:",
+  Object.getPrototypeOf(student1) === Student.prototype);                 // true
+console.log("Object.getPrototypeOf(Student.prototype) === Person.prototype:",
+  Object.getPrototypeOf(Student.prototype) === Person.prototype);         // true
+// Chain: student1 -> Student.prototype -> Person.prototype -> Object.prototype -> null
+
+
+
+##########################################################################
+Q6 - Chain: Person -> Faculty -> Professor  (file: q6.js)
+##########################################################################
+
+// ---- Level 1: Person ----
+function Person(name) {
+  this.name = name;                       // own property
+}
+Person.prototype.introduce = function () { // own method
+  console.log(`Hi, I am ${this.name}.`);
+};
+
+// ---- Level 2: Faculty inherits Person ----
+function Faculty(name, department) {
+  Person.call(this, name);
+  this.department = department;           // own property
+}
+Faculty.prototype = Object.create(Person.prototype);
+Faculty.prototype.constructor = Faculty;
+Faculty.prototype.teach = function () {   // own method
+  console.log(`${this.name} teaches in the ${this.department} department.`);
+};
+
+// ---- Level 3: Professor inherits Faculty ----
+function Professor(name, department, researchArea) {
+  Faculty.call(this, name, department);
+  this.researchArea = researchArea;       // own property
+}
+Professor.prototype = Object.create(Faculty.prototype);
+Professor.prototype.constructor = Professor;
+Professor.prototype.doResearch = function () { // own method
+  console.log(`${this.name} researches ${this.researchArea}.`);
+};
+
+const prof = new Professor("Dr. Sharma", "Computer Science", "Artificial Intelligence");
+
+// A Professor object can use methods from ALL levels
+prof.introduce();   // from Person.prototype
+prof.teach();       // from Faculty.prototype
+prof.doResearch();  // from Professor.prototype
+
+// ---- Show the chain ----
+console.log("\n--- Chain check ---");
+console.log("Own properties:", Object.keys(prof)); // name, department, researchArea
+console.log("instanceof Professor:", prof instanceof Professor); // true
+console.log("instanceof Faculty  :", prof instanceof Faculty);   // true
+console.log("instanceof Person   :", prof instanceof Person);    // true
+console.log("Professor.prototype -> Faculty.prototype?",
+  Object.getPrototypeOf(Professor.prototype) === Faculty.prototype); // true
+console.log("Faculty.prototype -> Person.prototype?",
+  Object.getPrototypeOf(Faculty.prototype) === Person.prototype);    // true
+// Lookup order for prof.introduce(): prof -> Professor.prototype ->
+// Faculty.prototype -> Person.prototype (found here).
+
+
+
+##########################################################################
+Q7 - Closure: makeMultiplier        (file: q7.js)
+##########################################################################
+
+function makeMultiplier(multiplier) {
+  // The inner function "remembers" the multiplier variable
+  return function (number) {
+    return number * multiplier;
+  };
+}
+
+const double = makeMultiplier(2);
+const triple = makeMultiplier(3);
+
+console.log(triple(5));  // 15
+console.log(double(5));  // 10
+console.log(triple(10)); // 30
+
+// HOW THE CLOSURE WORKS:
+// 1. makeMultiplier(3) runs, creating a local variable multiplier = 3.
+// 2. It returns the inner function, then makeMultiplier finishes. Normally
+//    its local variables would be destroyed.
+// 3. BUT the inner function still refers to "multiplier", so JavaScript keeps
+//    that variable alive. The inner function plus its remembered outer
+//    variables is called a CLOSURE.
+// 4. When triple(5) is called later, it still has access to multiplier = 3,
+//    so the result is 5 * 3 = 15.
+// 5. double and triple each have their OWN separate closure (multiplier = 2
+//    and multiplier = 3), so they do not affect each other.
+
+
+
+##########################################################################
+Q8 - Custom Array Method myMap()    (file: q8.js)
+##########################################################################
+
+// Must be a normal function (NOT arrow) so "this" refers to the array
+// on which myMap is called.
+Array.prototype.myMap = function (callback, thisArg) {
+  if (typeof callback !== "function") {
+    throw new TypeError(`${callback} is not a function`);
+  }
+
+  const result = [];
+  for (let i = 0; i < this.length; i++) {
+    // Like built-in map: callback gets (element, index, array)
+    result.push(callback.call(thisArg, this[i], i, this));
+  }
+  return result;
+};
+
+// Optional but good practice: hide myMap from for...in loops
+Object.defineProperty(Array.prototype, "myMap", { enumerable: false });
+
+// ---- Tests ----
+console.log([1, 2, 3].myMap(num => num * 2));              // [ 2, 4, 6 ]
+console.log(["a", "b"].myMap((item, index) => `${index}:${item}`)); // [ '0:a', '1:b' ]
+
+// Compare with built-in map
+const data = [10, 20, 30];
+console.log("myMap :", data.myMap(n => n / 10)); // [ 1, 2, 3 ]
+console.log("map   :", data.map(n => n / 10));   // [ 1, 2, 3 ]
+
+// Error handling
+try {
+  [1, 2, 3].myMap("not a function");
+} catch (err) {
+  console.log(`${err.name}: ${err.message}`);
+}
+
+
+
+##########################################################################
+Q9 - ES6 Classes with extends and super  (file: q9.js)
+##########################################################################
+
+// ================= Prototype version =================
+function PersonProto(name) {
+  this.name = name;
+}
+PersonProto.prototype.getName = function () {
+  return `Name: ${this.name}`;
+};
+
+function StudentProto(name, branch) {
+  PersonProto.call(this, name);
+  this.branch = branch;
+}
+StudentProto.prototype = Object.create(PersonProto.prototype);
+StudentProto.prototype.constructor = StudentProto;
+StudentProto.prototype.getBranch = function () {
+  return `Branch: ${this.branch}`;
+};
+StudentProto.prototype.getDetails = function () {
+  return `${this.getName()} | ${this.getBranch()}`;
+};
+
+// ================= ES6 class version =================
+class PersonClass {
+  constructor(name) {
+    this.name = name;
+  }
+  getName() {
+    return `Name: ${this.name}`;
+  }
+}
+
+class StudentClass extends PersonClass {
+  constructor(name, branch) {
+    super(name);          // calls the parent constructor (like Person.call)
+    this.branch = branch;
+  }
+  getBranch() {
+    return `Branch: ${this.branch}`;
+  }
+  getDetails() {
+    return `${super.getName()} | ${this.getBranch()}`; // super.method() calls parent method
+  }
+}
+
+// ================= Compare behavior =================
+const s1 = new StudentProto("Ansh", "Computer Science");
+const s2 = new StudentClass("Ansh", "Computer Science");
+
+console.log("Prototype version:", s1.getDetails());
+console.log("Class version    :", s2.getDetails());
+console.log("Same output?     :", s1.getDetails() === s2.getDetails()); // true
+
+console.log("\n--- Prototype chain check ---");
+console.log("Proto  -> instanceof PersonProto :", s1 instanceof PersonProto);  // true
+console.log("Class  -> instanceof PersonClass :", s2 instanceof PersonClass);  // true
+console.log("Proto  chain ok:", Object.getPrototypeOf(StudentProto.prototype) === PersonProto.prototype); // true
+console.log("Class  chain ok:", Object.getPrototypeOf(StudentClass.prototype) === PersonClass.prototype); // true
+console.log("Own props proto:", Object.keys(s1)); // [ 'name', 'branch' ]
+console.log("Own props class:", Object.keys(s2)); // [ 'name', 'branch' ]
+
+// CONCLUSION: classes are "syntactic sugar" over prototypes. Under the hood
+// extends sets up the same prototype chain, and super() does the job of
+// Parent.call(this, ...). Small differences: class bodies run in strict mode,
+// a class cannot be called without new, and class methods are non-enumerable.
+try {
+  PersonClass("Test"); // calling a class without new
+} catch (err) {
+  console.log(`\n${err.name}: ${err.message}`);
+}
+
+==========================================================================
+END OF ASSIGNMENT 5
+==========================================================================
