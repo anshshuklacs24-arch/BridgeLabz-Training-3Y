@@ -1,0 +1,889 @@
+==========================================================================
+                    JAVASCRIPT - ASSIGNMENT 4 SOLUTIONS
+==========================================================================
+
+  Student Name    : Ansh Shukla
+  University      : GLA University, Mathura
+  Course / Branch : B.Tech - Computer Science & Engineering
+  University Roll No : [ENTER YOUR UNIVERSITY ROLL NUMBER HERE]
+  Subject         : JavaScript (Classes, Objects, Forms and RegExp)
+  Assignment      : Assignment 4
+  Date            : 30 October 2026
+
+==========================================================================
+TABLE OF CONTENTS
+==========================================================================
+  Q1 - E-Commerce Product Manager            (q1.js)    Node.js
+  Q2 - Student Form Validator                (q2.html)  Browser
+  Q3 - Library Management System             (q3.js)    Node.js
+  Q4 - Custom Form Builder                   (q4.html)  Browser
+  Q5 - Movie Ticket Booking                  (q5.html)  Browser
+  Q6 - Employee Management System            (q6.js)    Node.js
+  Q7 - Login Form Validation using RegExp    (q7.html)  Browser
+  Q8 - Dynamic Object Updater                (q8.html)  Browser
+  Q9 - Shopping Cart Total                   (q9.js)    Node.js
+
+==========================================================================
+INSTRUCTIONS FOR RUNNING
+==========================================================================
+  * Each question below is a separate file. The file name is shown in the
+    header of each section. Copy each block into its own file.
+  * .js files (Q1, Q3, Q6, Q9): run in the terminal with  node q1.js
+  * .html files (Q2, Q4, Q5, Q7, Q8): these need the DOM, so open the file
+    in a browser (double-click, or "Open with Live Server" in VS Code).
+    Each HTML file is self-contained (HTML + CSS + JavaScript in one file).
+  * Only core JavaScript (ES6+) is used. No frameworks or libraries.
+==========================================================================
+
+
+
+##########################################################################
+Q1 - E-Commerce Product Manager (Classes + Objects)     File: q1.js
+##########################################################################
+
+// Product class for the Admin Panel
+class Product {
+  constructor(id, name, price, category) {
+    this.id = id;
+    this.name = name;
+    this.price = price;
+    this.category = category;
+  }
+
+  // Reduces the price by the given percentage (default 10%)
+  applyDiscount(percent = 10) {
+    if (percent <= 0 || percent > 100) {
+      throw new RangeError("Discount must be between 1 and 100 percent");
+    }
+    const discountAmount = (this.price * percent) / 100;
+    this.price = this.price - discountAmount;
+    return this.price;
+  }
+
+  // Returns a formatted string with the product details
+  getDetails() {
+    return `ID: ${this.id} | ${this.name.padEnd(12)} | Category: ${this.category.padEnd(12)} | Price: Rs. ${this.price.toLocaleString("en-IN")}`;
+  }
+}
+
+// Store multiple product objects in an array
+const products = [
+  new Product(1, "Laptop", 55000, "Electronics"),
+  new Product(2, "Mouse", 499, "Accessories"),
+  new Product(3, "Keyboard", 1500, "Accessories"),
+  new Product(4, "Headphones", 2999, "Electronics"),
+  new Product(5, "USB Cable", 199, "Accessories"),
+  new Product(6, "Monitor", 12000, "Electronics")
+];
+
+console.log("===== ALL PRODUCTS =====");
+products.forEach(product => console.log(product.getDetails()));
+
+// Apply a 10% discount on one product and show the change
+console.log("\n===== APPLY 10% DISCOUNT ON LAPTOP =====");
+const laptop = products[0];
+console.log("Before:", laptop.getDetails());
+laptop.applyDiscount(10);
+console.log("After :", laptop.getDetails());
+
+// Filter products with price greater than 1000
+console.log("\n===== PRODUCTS WITH PRICE > 1000 =====");
+const expensiveProducts = products.filter(product => product.price > 1000);
+expensiveProducts.forEach(product => console.log(product.getDetails()));
+console.log(`Total: ${expensiveProducts.length} product(s)`);
+
+
+
+##########################################################################
+Q2 - Student Form Validator (Forms + RegExp)            File: q2.html
+##########################################################################
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Registration Form</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; display: flex; justify-content: center; padding: 30px; }
+    form { background: #fff; padding: 25px 30px; border-radius: 8px; width: 340px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    h2 { text-align: center; margin-top: 0; }
+    label { display: block; margin-top: 14px; font-weight: bold; font-size: 14px; }
+    input { width: 100%; padding: 8px; margin-top: 5px; border: 2px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    input.valid { border-color: green; }
+    input.invalid { border-color: red; }
+    .error { color: red; font-size: 12px; min-height: 16px; margin-top: 3px; }
+    button { margin-top: 18px; width: 100%; padding: 10px; background: #2d6cdf; color: #fff; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; }
+    #successMessage { color: green; text-align: center; font-weight: bold; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <form id="registrationForm" novalidate>
+    <h2>Student Registration</h2>
+
+    <label for="name">Name</label>
+    <input type="text" id="name" placeholder="Alphabets only">
+    <div class="error" id="nameError"></div>
+
+    <label for="email">Email</label>
+    <input type="text" id="email" placeholder="example@domain.com">
+    <div class="error" id="emailError"></div>
+
+    <label for="phone">Phone</label>
+    <input type="text" id="phone" placeholder="10 digit number">
+    <div class="error" id="phoneError"></div>
+
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="Strong password">
+    <div class="error" id="passwordError"></div>
+
+    <button type="submit">Register</button>
+    <div id="successMessage"></div>
+  </form>
+
+  <script>
+    // Validation rules: one RegExp and one error message per field id
+    const rules = {
+      name: {
+        regex: /^[A-Za-z]+(?: [A-Za-z]+)*$/,   // only alphabets (single spaces between words allowed)
+        message: "Name must contain alphabets only."
+      },
+      email: {
+        regex: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/, // example@domain.com
+        message: "Enter a valid email (example@domain.com)."
+      },
+      phone: {
+        regex: /^\d{10}$/,                      // exactly 10 digits
+        message: "Phone must be exactly 10 digits."
+      },
+      password: {
+        // lookaheads: 1 uppercase, 1 number, 1 special character (+ minimum 8 characters)
+        regex: /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/,
+        message: "Password needs 1 uppercase, 1 number, 1 special character (min 8 chars)."
+      }
+    };
+
+    const form = document.getElementById("registrationForm");
+    const inputs = form.querySelectorAll("input");
+    const successMessage = document.getElementById("successMessage");
+
+    // Validates one input: red border + message if invalid, green if valid
+    function validateField(input) {
+      const rule = rules[input.id];
+      const errorBox = document.getElementById(`${input.id}Error`);
+      const value = input.id === "password" ? input.value : input.value.trim();
+      const isValid = rule.regex.test(value);
+
+      input.classList.toggle("valid", isValid);
+      input.classList.toggle("invalid", !isValid);
+      errorBox.textContent = isValid ? "" : rule.message;
+      return isValid;
+    }
+
+    // Live validation while typing
+    inputs.forEach(input => input.addEventListener("input", () => validateField(input)));
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      // map() first so that EVERY field gets validated (no short-circuit)
+      const results = Array.from(inputs).map(validateField);
+      const allValid = results.every(Boolean);
+      successMessage.textContent = allValid ? "Registration successful!" : "";
+    });
+  </script>
+</body>
+</html>
+
+
+
+##########################################################################
+Q3 - Library Management System (Classes + Objects)      File: q3.js
+##########################################################################
+
+// Book class with issue/return behaviour
+class Book {
+  constructor(title, author, isbn, isIssued = false) {
+    this.title = title;
+    this.author = author;
+    this.isbn = isbn;
+    this.isIssued = isIssued;
+  }
+
+  issueBook() {
+    if (this.isIssued) {
+      return false;               // already issued, cannot issue again
+    }
+    this.isIssued = true;
+    return true;
+  }
+
+  returnBook() {
+    if (!this.isIssued) {
+      return false;               // was never issued
+    }
+    this.isIssued = false;
+    return true;
+  }
+}
+
+// Array of book objects
+const library = [
+  new Book("Clean Code", "Robert C. Martin", "978-0132350884"),
+  new Book("Eloquent JavaScript", "Marijn Haverbeke", "978-1593279509"),
+  new Book("You Don't Know JS", "Kyle Simpson", "978-1491904244"),
+  new Book("The Pragmatic Programmer", "Andrew Hunt", "978-0135957059", true)
+];
+
+// Display all books that are NOT issued
+function displayAvailableBooks() {
+  console.log("----- Available Books -----");
+  const available = library.filter(book => !book.isIssued);
+  if (available.length === 0) {
+    console.log("No books are available right now.");
+    return;
+  }
+  available.forEach(book => {
+    console.log(`${book.title} by ${book.author} (ISBN: ${book.isbn})`);
+  });
+}
+
+// Search by ISBN and issue the book
+function issueBookByISBN(isbn) {
+  const book = library.find(item => item.isbn === isbn.trim());
+
+  if (!book) {
+    console.log(`[NOT FOUND] No book with ISBN ${isbn}`);
+  } else if (book.issueBook()) {
+    console.log(`[ISSUED] "${book.title}" has been issued.`);
+  } else {
+    console.log(`[UNAVAILABLE] "${book.title}" is already issued.`);
+  }
+}
+
+function returnBookByISBN(isbn) {
+  const book = library.find(item => item.isbn === isbn.trim());
+  if (book && book.returnBook()) {
+    console.log(`[RETURNED] "${book.title}" has been returned.`);
+  } else {
+    console.log(`[ERROR] Could not return book with ISBN ${isbn}`);
+  }
+}
+
+// ---------- Demonstration ----------
+displayAvailableBooks();
+
+console.log("\n----- Issue books -----");
+issueBookByISBN("978-0132350884"); // success
+issueBookByISBN("978-0132350884"); // already issued
+issueBookByISBN("978-0000000000"); // not found
+
+console.log();
+displayAvailableBooks();
+
+console.log("\n----- Return a book -----");
+returnBookByISBN("978-0132350884");
+console.log();
+displayAvailableBooks();
+
+// Optional: let the user pass an ISBN from the command line
+//   node q3.js 978-1593279509
+const userIsbn = process.argv[2];
+if (userIsbn) {
+  console.log(`\n----- Issue from command line: ${userIsbn} -----`);
+  issueBookByISBN(userIsbn);
+  displayAvailableBooks();
+}
+
+
+
+##########################################################################
+Q4 - Custom Form Builder (Forms + Classes)              File: q4.html
+##########################################################################
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Form Builder</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; display: flex; justify-content: center; padding: 30px; }
+    .wrapper { background: #fff; padding: 25px 30px; border-radius: 8px; width: 360px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .field { margin-top: 14px; }
+    .field label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 5px; }
+    .field input[type="checkbox"] { margin-right: 6px; }
+    .field input:not([type="checkbox"]), .field select, .field textarea { width: 100%; padding: 8px; border: 1px solid #aaa; border-radius: 4px; box-sizing: border-box; }
+    button { margin-top: 18px; width: 100%; padding: 10px; background: #2d6cdf; color: #fff; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; }
+    pre { background: #272822; color: #a6e22e; padding: 12px; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h2>Dynamic Form</h2>
+    <div id="formContainer"></div>
+    <h3>Submitted Data</h3>
+    <pre id="output">Nothing submitted yet.</pre>
+  </div>
+
+  <script>
+    // FormBuilder generates a form from an array of field objects
+    class FormBuilder {
+      constructor(containerId, fields, onSubmit) {
+        this.container = document.getElementById(containerId);
+        this.fields = fields;
+        this.onSubmit = onSubmit;
+        this.form = null;
+      }
+
+      // Escapes special characters so labels cannot break the generated HTML
+      static escapeHTML(text) {
+        const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+        return String(text).replace(/[&<>"']/g, char => map[char]);
+      }
+
+      // Field name used as the key of the returned object (e.g. "Full Name" -> "full_name")
+      getFieldName(field) {
+        return field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+      }
+
+      // Builds the HTML string for one field
+      buildField(field) {
+        const name = FormBuilder.escapeHTML(this.getFieldName(field));
+        const label = FormBuilder.escapeHTML(field.label);
+        const required = field.required ? "required" : "";
+        const allowedTypes = ["text", "email", "password", "number", "date", "tel"];
+
+        if (field.type === "checkbox") {
+          return `<div class="field"><label><input type="checkbox" id="${name}" name="${name}">${label}</label></div>`;
+        }
+
+        let control;
+        if (field.type === "textarea") {
+          control = `<textarea id="${name}" name="${name}" rows="3" ${required}></textarea>`;
+        } else if (field.type === "select") {
+          const options = (field.options || [])
+            .map(option => `<option value="${FormBuilder.escapeHTML(option)}">${FormBuilder.escapeHTML(option)}</option>`)
+            .join("");
+          control = `<select id="${name}" name="${name}" ${required}>${options}</select>`;
+        } else {
+          const type = allowedTypes.includes(field.type) ? field.type : "text";
+          control = `<input type="${type}" id="${name}" name="${name}" ${required}>`;
+        }
+        return `<div class="field"><label for="${name}">${label}</label>${control}</div>`;
+      }
+
+      // Creates the whole form dynamically using innerHTML
+      render() {
+        const fieldsHTML = this.fields.map(field => this.buildField(field)).join("");
+        this.container.innerHTML = `<form id="dynamicForm">${fieldsHTML}<button type="submit">Submit</button></form>`;
+
+        this.form = this.container.querySelector("#dynamicForm");
+        this.form.addEventListener("submit", event => {
+          event.preventDefault();               // stop page reload
+          this.onSubmit(this.getFormData());    // pass collected values to the handler
+        });
+      }
+
+      // Returns all entered values as an object
+      getFormData() {
+        const data = {};
+        this.fields.forEach(field => {
+          const name = this.getFieldName(field);
+          const element = this.form.elements[name];
+          data[name] = field.type === "checkbox" ? element.checked : element.value;
+        });
+        return data;
+      }
+    }
+
+    // Field definitions
+    const fields = [
+      { type: "text", label: "Username", required: true },
+      { type: "email", label: "Email", required: true },
+      { type: "password", label: "Password", required: true },
+      { type: "number", label: "Age" },
+      { type: "select", label: "Course", options: ["B.Tech", "BCA", "MCA", "MBA"] },
+      { type: "textarea", label: "About You" },
+      { type: "checkbox", label: "I agree to the terms" }
+    ];
+
+    const output = document.getElementById("output");
+
+    const builder = new FormBuilder("formContainer", fields, data => {
+      output.textContent = JSON.stringify(data, null, 2); // show the object
+      console.log("Form data:", data);
+    });
+    builder.render();
+  </script>
+</body>
+</html>
+
+
+
+##########################################################################
+Q5 - Movie Ticket Booking (Objects + RegExp)            File: q5.html
+##########################################################################
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Ticket Booking</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; display: flex; justify-content: center; padding: 30px; }
+    .card { background: #fff; padding: 25px 30px; border-radius: 8px; width: 340px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    h2 { text-align: center; margin-top: 0; }
+    label { display: block; margin-top: 14px; font-weight: bold; font-size: 14px; }
+    input { width: 100%; padding: 8px; margin-top: 5px; border: 2px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    input.valid { border-color: green; }
+    input.invalid { border-color: red; }
+    .error { color: red; font-size: 12px; min-height: 16px; margin-top: 3px; }
+    button { margin-top: 18px; width: 100%; padding: 10px; background: #c0392b; color: #fff; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; }
+    #ticket { margin-top: 20px; border: 2px dashed #c0392b; border-radius: 6px; padding: 12px 15px; display: none; }
+    #ticket h3 { margin: 0 0 8px; color: #c0392b; }
+    #ticket p { margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Book Movie Tickets</h2>
+    <form id="bookingForm" novalidate>
+      <label for="name">Name</label>
+      <input type="text" id="name" placeholder="Alphabets only">
+      <div class="error" id="nameError"></div>
+
+      <label for="email">Email</label>
+      <input type="text" id="email" placeholder="example@domain.com">
+      <div class="error" id="emailError"></div>
+
+      <label for="seats">Seats (1 to 10)</label>
+      <input type="text" id="seats" placeholder="Number of seats">
+      <div class="error" id="seatsError"></div>
+
+      <button type="submit">Book Ticket</button>
+    </form>
+
+    <div id="ticket"></div>
+  </div>
+
+  <script>
+    const rules = {
+      name:  { regex: /^[A-Za-z]+(?: [A-Za-z]+)*$/, message: "Name must contain alphabets only." },
+      email: { regex: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/, message: "Enter a valid email address." },
+      seats: { regex: /^(?:[1-9]|10)$/, message: "Seats must be a number from 1 to 10." } // 1-9 or 10
+    };
+
+    const form = document.getElementById("bookingForm");
+    const inputs = form.querySelectorAll("input");
+    const ticketBox = document.getElementById("ticket");
+
+    function validateField(input) {
+      const rule = rules[input.id];
+      const isValid = rule.regex.test(input.value.trim());
+      input.classList.toggle("valid", isValid);
+      input.classList.toggle("invalid", !isValid);
+      document.getElementById(`${input.id}Error`).textContent = isValid ? "" : rule.message;
+      return isValid;
+    }
+
+    inputs.forEach(input => input.addEventListener("input", () => validateField(input)));
+
+    // Builds one line of the ticket using textContent (safe, no HTML injection)
+    function addLine(parent, label, value) {
+      const line = document.createElement("p");
+      const strong = document.createElement("strong");
+      strong.textContent = `${label}: `;
+      line.appendChild(strong);
+      line.appendChild(document.createTextNode(value));
+      parent.appendChild(line);
+    }
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      const allValid = Array.from(inputs).map(validateField).every(Boolean);
+
+      if (!allValid) {
+        ticketBox.style.display = "none";
+        return;
+      }
+
+      // Store booking info in an object
+      const booking = {
+        name: document.getElementById("name").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        seats: Number(document.getElementById("seats").value)
+      };
+      console.log("Booking:", booking);
+
+      // Display ticket details
+      ticketBox.textContent = "";
+      const heading = document.createElement("h3");
+      heading.textContent = "Booking Confirmed";
+      ticketBox.appendChild(heading);
+      addLine(ticketBox, "Name", booking.name);
+      addLine(ticketBox, "Email", booking.email);
+      addLine(ticketBox, "Seats", booking.seats);
+      ticketBox.style.display = "block";
+    });
+  </script>
+</body>
+</html>
+
+
+
+##########################################################################
+Q6 - Employee Management System (Classes + Object Methods)   File: q6.js
+##########################################################################
+
+// Assumption: "salary" is the MONTHLY salary, so annual = salary * 12
+class Employee {
+  constructor(id, name, department, salary) {
+    this.id = id;
+    this.name = name;
+    this.department = department;
+    this.salary = salary;
+  }
+
+  // Annual salary = monthly salary x 12
+  getAnnualSalary() {
+    return this.salary * 12;
+  }
+
+  // Increases the monthly salary by the given percentage
+  applyBonus(percent) {
+    if (percent <= 0) {
+      throw new RangeError("Bonus percentage must be greater than 0");
+    }
+    this.salary += (this.salary * percent) / 100;
+    return this.salary;
+  }
+}
+
+// Create 5 employee objects
+const employees = [
+  new Employee(101, "Amit", "Engineering", 60000),
+  new Employee(102, "Sara", "HR", 40000),
+  new Employee(103, "Kiran", "Finance", 55000),
+  new Employee(104, "Neha", "Marketing", 45000),
+  new Employee(105, "Rahul", "Engineering", 70000)
+];
+
+// Formats numbers in Indian currency style
+const formatMoney = amount => `Rs. ${amount.toLocaleString("en-IN")}`;
+
+console.log("===== ANNUAL SALARY OF EACH EMPLOYEE =====");
+employees.forEach(emp => {
+  console.log(
+    `${emp.id} | ${emp.name.padEnd(6)} | ${emp.department.padEnd(12)} | Monthly: ${formatMoney(emp.salary)} | Annual: ${formatMoney(emp.getAnnualSalary())}`
+  );
+});
+
+// reduce() adds up every employee's annual salary
+const totalAnnualPayout = employees.reduce(
+  (total, emp) => total + emp.getAnnualSalary(),
+  0
+);
+console.log(`\nTotal annual payout of the company: ${formatMoney(totalAnnualPayout)}`);
+
+// Apply a 10% bonus to one employee and recalculate
+console.log("\n===== APPLY 10% BONUS TO AMIT =====");
+employees[0].applyBonus(10);
+console.log(`Amit's new monthly salary: ${formatMoney(employees[0].salary)}`);
+console.log(`Amit's new annual salary : ${formatMoney(employees[0].getAnnualSalary())}`);
+
+const newTotal = employees.reduce((total, emp) => total + emp.getAnnualSalary(), 0);
+console.log(`New total annual payout  : ${formatMoney(newTotal)}`);
+
+
+
+##########################################################################
+Q7 - Login Form Validation using RegExp                 File: q7.html
+##########################################################################
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Form Validation</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; display: flex; justify-content: center; padding: 30px; }
+    form { background: #fff; padding: 25px 30px; border-radius: 8px; width: 340px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    h2 { text-align: center; margin-top: 0; }
+    label { display: block; margin-top: 14px; font-weight: bold; font-size: 14px; }
+    input { width: 100%; padding: 8px; margin-top: 5px; border: 2px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    button { margin-top: 18px; width: 100%; padding: 10px; background: #2d6cdf; color: #fff; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; }
+    #messages ul { color: red; font-size: 13px; padding-left: 20px; margin: 12px 0 0; }
+    #messages .success { color: green; font-weight: bold; text-align: center; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <form id="loginForm" novalidate>
+    <h2>Login</h2>
+
+    <label for="username">Username</label>
+    <input type="text" id="username">
+
+    <label for="password">Password</label>
+    <input type="password" id="password">
+
+    <button type="submit">Login</button>
+    <div id="messages"></div>
+  </form>
+
+  <script>
+    // One RegExp per requirement so that we can show SPECIFIC error messages
+    const usernameRules = [
+      { regex: /^.{5,}$/, message: "Username must be at least 5 characters long." }
+    ];
+
+    const passwordRules = [
+      { regex: /^.{8,}$/,       message: "Password must be at least 8 characters long." },
+      { regex: /\d/,            message: "Password must include at least one number." },
+      { regex: /[A-Z]/,         message: "Password must include at least one uppercase letter." },
+      { regex: /[a-z]/,         message: "Password must include at least one lowercase letter." },
+      { regex: /[^A-Za-z0-9]/,  message: "Password must include at least one special character." }
+    ];
+
+    // Returns the messages of all failed rules
+    function getErrors(value, rules) {
+      return rules.filter(rule => !rule.regex.test(value)).map(rule => rule.message);
+    }
+
+    const form = document.getElementById("loginForm");
+    const messageBox = document.getElementById("messages");
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      const errors = [
+        ...getErrors(username, usernameRules),
+        ...getErrors(password, passwordRules)
+      ];
+
+      messageBox.textContent = "";
+
+      if (errors.length === 0) {
+        const success = document.createElement("div");
+        success.className = "success";
+        success.textContent = "Login successful!";
+        messageBox.appendChild(success);
+      } else {
+        const list = document.createElement("ul");
+        errors.forEach(text => {
+          const item = document.createElement("li");
+          item.textContent = text;
+          list.appendChild(item);
+        });
+        messageBox.appendChild(list);
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+
+##########################################################################
+Q8 - Dynamic Object Updater                             File: q8.html
+##########################################################################
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Object Updater</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; display: flex; justify-content: center; padding: 30px; }
+    .card { background: #fff; padding: 25px 30px; border-radius: 8px; width: 360px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    h2 { text-align: center; margin-top: 0; }
+    label { display: block; margin-top: 14px; font-weight: bold; font-size: 14px; }
+    input { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #aaa; border-radius: 4px; box-sizing: border-box; }
+    button { margin-top: 18px; width: 100%; padding: 10px; background: #2d6cdf; color: #fff; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; }
+    #display { margin-top: 20px; background: #eef3ff; padding: 12px 15px; border-radius: 6px; }
+    #display div { margin: 4px 0; }
+    pre { background: #272822; color: #a6e22e; padding: 10px; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Edit User</h2>
+    <form id="userForm">
+      <label for="name">Name</label>
+      <input type="text" id="name">
+
+      <label for="email">Email</label>
+      <input type="email" id="email">
+
+      <label for="age">Age</label>
+      <input type="number" id="age" min="1">
+
+      <button type="submit">Update User</button>
+    </form>
+
+    <h3>Updated Object Details</h3>
+    <div id="display"></div>
+    <pre id="jsonOutput"></pre>
+  </div>
+
+  <script>
+    // The object to be edited
+    const user = { name: "John", email: "john@mail.com", age: 21 };
+
+    const nameInput = document.getElementById("name");
+    const emailInput = document.getElementById("email");
+    const ageInput = document.getElementById("age");
+    const display = document.getElementById("display");
+    const jsonOutput = document.getElementById("jsonOutput");
+
+    // Pre-fill the form with the current object values
+    function fillForm() {
+      nameInput.value = user.name;
+      emailInput.value = user.email;
+      ageInput.value = user.age;
+    }
+
+    // Shows the object below the form using DOM methods
+    function showUser() {
+      display.textContent = "";
+      Object.entries(user).forEach(([key, value]) => {
+        const row = document.createElement("div");
+        const label = document.createElement("strong");
+        label.textContent = `${key}: `;
+        row.appendChild(label);
+        row.appendChild(document.createTextNode(value));
+        display.appendChild(row);
+      });
+      jsonOutput.textContent = JSON.stringify(user, null, 2);
+    }
+
+    // Copies the form values into the user object
+    function updateUser() {
+      user.name = nameInput.value.trim();
+      user.email = emailInput.value.trim();
+
+      const age = Number(ageInput.value);
+      // Only accept a valid positive whole number for age
+      if (ageInput.value.trim() !== "" && Number.isInteger(age) && age > 0) {
+        user.age = age;
+      }
+      showUser();
+    }
+
+    // "Real time": the object updates on every keystroke ...
+    [nameInput, emailInput, ageInput].forEach(input => input.addEventListener("input", updateUser));
+
+    // ... and also when the form is submitted
+    document.getElementById("userForm").addEventListener("submit", event => {
+      event.preventDefault();
+      updateUser();
+      console.log("Updated user object:", user);
+    });
+
+    fillForm();
+    showUser();
+  </script>
+</body>
+</html>
+
+
+
+##########################################################################
+Q9 - Shopping Cart Total (Classes + RegExp for Coupon)  File: q9.js
+##########################################################################
+
+class Cart {
+  constructor() {
+    this.items = [];
+    this.discountPercent = 0;
+    this.appliedCoupon = null;
+  }
+
+  // Adds an item with name, price and quantity
+  addItem(name, price, quantity) {
+    if (typeof name !== "string" || name.trim() === "") {
+      throw new Error("Item name is required");
+    }
+    if (!(price > 0) || !Number.isInteger(quantity) || quantity < 1) {
+      throw new Error(`Invalid price or quantity for "${name}"`);
+    }
+    this.items.push({ name: name.trim(), price, quantity });
+  }
+
+  // Total before any discount
+  getTotal() {
+    return this.items.reduce((total, item) => total + item.price * item.quantity, 0);
+  }
+
+  // Validates the coupon with a RegExp: SAVE20 or DISC10
+  // Format: prefix SAVE or DISC followed by exactly two digits (the discount %)
+  applyCoupon(code) {
+    const couponPattern = /^(SAVE|DISC)(\d{2})$/;
+    const match = couponPattern.exec(String(code).trim().toUpperCase());
+
+    if (!match || Number(match[2]) === 0) {
+      this.discountPercent = 0;
+      this.appliedCoupon = null;
+      return false; // invalid coupon
+    }
+
+    this.discountPercent = Number(match[2]); // e.g. "SAVE20" -> 20
+    this.appliedCoupon = match[0];
+    return true;
+  }
+
+  getDiscountAmount() {
+    return (this.getTotal() * this.discountPercent) / 100;
+  }
+
+  getFinalTotal() {
+    return this.getTotal() - this.getDiscountAmount();
+  }
+
+  // Prints the cart summary
+  printSummary() {
+    console.log("----- CART SUMMARY -----");
+    this.items.forEach(item => {
+      console.log(
+        `${item.name.padEnd(12)} Rs. ${item.price} x ${item.quantity} = Rs. ${item.price * item.quantity}`
+      );
+    });
+    console.log(`Subtotal      : Rs. ${this.getTotal().toFixed(2)}`);
+    if (this.appliedCoupon) {
+      console.log(`Coupon (${this.appliedCoupon}): -${this.discountPercent}% = -Rs. ${this.getDiscountAmount().toFixed(2)}`);
+    }
+    console.log(`Final Total   : Rs. ${this.getFinalTotal().toFixed(2)}`);
+  }
+}
+
+// ---------- Demonstration ----------
+const cart = new Cart();
+cart.addItem("Notebook", 120, 3);
+cart.addItem("Pen Set", 80, 2);
+cart.addItem("Backpack", 1500, 1);
+
+console.log(`Total without coupon: Rs. ${cart.getTotal()}\n`); // 360 + 160 + 1500 = 2020
+
+// Test several coupons
+["SAVE20", "DISC10", "save15", "OFFER50", "SAVE5", "SAVE200"].forEach(code => {
+  const isValid = cart.applyCoupon(code);
+  if (isValid) {
+    console.log(`Coupon "${code}" is VALID  -> ${cart.discountPercent}% discount, final total: Rs. ${cart.getFinalTotal().toFixed(2)}`);
+  } else {
+    console.log(`Coupon "${code}" is INVALID -> no discount applied`);
+  }
+});
+
+// Apply a valid coupon and print the final summary
+console.log();
+cart.applyCoupon("SAVE20");
+cart.printSummary();
+
+==========================================================================
+                          END OF ASSIGNMENT 4
+              Submitted by: Ansh Shukla | GLA University, Mathura
+==========================================================================
