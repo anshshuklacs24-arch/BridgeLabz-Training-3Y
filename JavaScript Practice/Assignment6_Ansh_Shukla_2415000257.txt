@@ -1,0 +1,1266 @@
+##########################################################################
+#                                                                        #
+#                 JAVASCRIPT  -  ASSIGNMENT 6  (SOLUTIONS)               #
+#      Promises | async/await | Event Loop | Error Handling | fetch      #
+#                                                                        #
+##########################################################################
+
+  +--------------------------------------------------------------------+
+  |  STUDENT DETAILS                                                   |
+  +--------------------------------------------------------------------+
+  |  Name                : Ansh Shukla                                 |
+  |  University Roll No  : 2415000257                                  |
+  |  University          : GLA University, Mathura                     |
+  |  Course / Branch     : B.Tech - Computer Science & Engineering     |
+  |  Subject             : JavaScript                                  |
+  |  Assignment          : Assignment 6                                |
+  |  Date of Submission  : 15 November 2026                            |
+  +--------------------------------------------------------------------+
+
+
+==========================================================================
+  TABLE OF CONTENTS
+==========================================================================
+
+   No.   Topic                                          File
+  -----  ---------------------------------------------  ---------------
+   Q1    The Startup Morning: Async Coffee Maker        q1.js
+   Q2    Task Scheduler: Micro vs Macro Challenge       q2.js
+   Q3    Bug Tracker: Callback to Promise Migration     q3.js
+   Q4    DevOps Delay: Async Timeout Race               q4.js
+   Q5    Frontend Rush: Avoiding Callback Hell          q5.js
+   Q6    E-Commerce Dashboard: Product Card Fetcher     q6.js
+         (bonus: product cards on a web page)           q6_bonus.html
+   Q7    The Lazy Loader: Promise.allSettled()          q7.js
+   Q8    Order Processing Flow: Async Retry Mechanism   q8.js
+   Q9    Debugging the Event Loop                       q9.js
+   Q10   The Final Delivery: Async Pipeline Debugger    q10.js
+
+
+==========================================================================
+  HOW TO RUN (VS CODE / TERMINAL)
+==========================================================================
+
+   1. Every question below is a separate file (see the "FILE" line in its
+      header). Copy each CODE block into its own file with that name.
+   2. Open the terminal in VS Code (Ctrl + `) and run:   node q1.js
+      (same for q2 ... q10). Node.js 18 or newer is required, because
+      Q6 uses the built-in fetch().
+   3. q6_bonus.html is for the browser: open it with "Open with Live
+      Server" in VS Code, or double-click the file.
+   4. Only core JavaScript (ES6+) is used. No frameworks or libraries.
+   5. Q1, Q4, Q8 and Q10 use Math.random(), so each run can show a
+      different result. For every such question this file shows BOTH the
+      success output and the failure output. To force one of them, change
+      the FAILURE_CHANCE / FAILURE_RATE constant at the top of the file
+      (0 = never fails, 1 = always fails).
+   6. Each question has: Problem, Analysis, Code, Output and Explanation.
+
+
+==========================================================================
+  TESTING NOTE
+==========================================================================
+   All files were run with Node.js v22 and syntax-checked. For the random
+   questions, both the success path and the failure path were run. Q6 needs
+   internet to reach fakestoreapi.com, so its success and error handling
+   were tested with a simulated fetch(); on your computer it will call the
+   real API.
+
+
+
+##########################################################################
+##  Q1.  THE STARTUP MORNING: ASYNC COFFEE MAKER
+##  FILE : q1.js
+##########################################################################
+
+PROBLEM
+-------
+Boiling water, brewing coffee and pouring into a cup are three asynchronous
+steps.
+ * Each step is a function returning a Promise that resolves after 1-2 s.
+ * Use Promise chaining (.then()) to simulate the process.
+ * Print logs for each step and finally display "Coffee ready for the team!".
+ * Use .catch() to handle any failure (simulate random failure using
+   Math.random()).
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Three functions -> three Promises. The delay must be random between 1000
+  and 2000 ms, so  1000 + Math.floor(Math.random() * 1001).
+* Steps must run ONE AFTER ANOTHER, so each .then() returns the NEXT
+  promise. Returning a promise inside .then() makes the chain wait for it.
+* Failure: Math.random() < FAILURE_CHANCE -> reject(new Error(...)).
+* A single .catch() at the end handles a failure in ANY step; the remaining
+  .then() calls are skipped automatically.
+* .finally() is an extra: it runs on both success and failure.
+
+CODE
+----
+"use strict";
+
+// Probability (0 to 1) that any single step fails.
+// Set it to 1 to always see the .catch() path, or 0 to always see success.
+const FAILURE_CHANCE = 0.25;
+
+// Returns a random delay between 1000 ms and 2000 ms
+function getRandomDelay() {
+  return 1000 + Math.floor(Math.random() * 1001);
+}
+
+// Generic asynchronous step. It returns a Promise that settles after 1-2 s:
+//   - resolves with `result` on success
+//   - rejects with an Error when the random failure check hits
+function runStep(startMessage, successMessage, errorMessage, result) {
+  return new Promise((resolve, reject) => {
+    console.log(startMessage);
+    setTimeout(() => {
+      if (Math.random() < FAILURE_CHANCE) {
+        reject(new Error(errorMessage));
+      } else {
+        console.log(successMessage);
+        resolve(result);
+      }
+    }, getRandomDelay());
+  });
+}
+
+// Step 1: boil the water
+function boilWater() {
+  return runStep(
+    "Step 1: Boiling water...",
+    "Step 1 done: Water is boiling hot",
+    "The kettle stopped working",
+    "hot water"
+  );
+}
+
+// Step 2: brew the coffee (receives the result of step 1)
+function brewCoffee(hotWater) {
+  return runStep(
+    `Step 2: Brewing coffee with ${hotWater}...`,
+    "Step 2 done: Coffee is brewed",
+    "The coffee machine jammed",
+    "brewed coffee"
+  );
+}
+
+// Step 3: pour into a cup (receives the result of step 2)
+function pourCoffee(brewedCoffee) {
+  return runStep(
+    `Step 3: Pouring ${brewedCoffee} into a cup...`,
+    "Step 3 done: Cup is filled",
+    "The cup slipped and broke",
+    "a cup of coffee"
+  );
+}
+
+console.log("Starting the coffee process...\n");
+
+// Promise chaining: each .then() waits for the previous Promise, so the
+// three steps run strictly one after another.
+boilWater()
+  .then(hotWater => brewCoffee(hotWater))
+  .then(brewedCoffee => pourCoffee(brewedCoffee))
+  .then(() => {
+    console.log("\nCoffee ready for the team!");
+  })
+  .catch(error => {
+    // A rejection in ANY step skips the remaining .then() calls
+    // and lands here.
+    console.log(`\nCoffee process failed: ${error.message}`);
+  })
+  .finally(() => {
+    // Runs in both cases (success or failure)
+    console.log("Coffee machine is shutting down.");
+  });
+
+console.log("(This line prints first: the steps above are asynchronous.)");
+
+OUTPUT - SUCCESS (FAILURE_CHANCE = 0)
+-------------------------------------
+Starting the coffee process...
+
+Step 1: Boiling water...
+(This line prints first: the steps above are asynchronous.)
+Step 1 done: Water is boiling hot
+Step 2: Brewing coffee with hot water...
+Step 2 done: Coffee is brewed
+Step 3: Pouring brewed coffee into a cup...
+Step 3 done: Cup is filled
+
+Coffee ready for the team!
+Coffee machine is shutting down.
+
+OUTPUT - FAILURE (FAILURE_CHANCE = 1)
+-------------------------------------
+Starting the coffee process...
+
+Step 1: Boiling water...
+(This line prints first: the steps above are asynchronous.)
+
+Coffee process failed: The kettle stopped working
+Coffee machine is shutting down.
+
+EXPLANATION
+-----------
+* The last line of the file prints first because the steps are asynchronous:
+  JavaScript does not wait for the timers, it continues with the next line.
+* Each step receives the previous step's result (hot water -> brewed
+  coffee), which shows that data flows through a promise chain.
+* In the failure run, step 1 rejected, so steps 2 and 3 never started and
+  control jumped straight to .catch().
+
+
+
+##########################################################################
+##  Q2.  TASK SCHEDULER: MICRO vs MACRO CHALLENGE
+##  FILE : q2.js
+##########################################################################
+
+PROBLEM
+-------
+Log "Start". Add one setTimeout() callback (macrotask), one resolved
+Promise.then() callback (microtask) and one synchronous log. Finally log
+"End". Run the program and explain (in comments) why microtasks run before
+macrotasks.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* The order of the lines in the file is NOT the order of the output.
+* Synchronous code always finishes first (call stack), then ALL microtasks,
+  then ONE macrotask at a time.
+* Expected order: Start -> Synchronous log -> End -> Microtask -> Macrotask.
+
+CODE
+----
+"use strict";
+
+console.log("Start");
+
+// MACROTASK: setTimeout callbacks go to the macrotask (task) queue.
+// Even with a delay of 0 ms, the callback can only run after the current
+// script and all pending microtasks are finished.
+setTimeout(() => {
+  console.log("Macrotask: setTimeout callback");
+}, 0);
+
+// MICROTASK: .then() callbacks of a resolved Promise go to the microtask queue.
+Promise.resolve().then(() => {
+  console.log("Microtask: Promise.then callback");
+});
+
+// Synchronous code runs immediately, in order, on the call stack.
+console.log("Synchronous log");
+
+console.log("End");
+
+// ---------------------------------------------------------------------------
+// WHY DO MICROTASKS RUN BEFORE MACROTASKS?
+//
+// 1. The script itself is one macrotask. All synchronous lines run first:
+//    "Start", "Synchronous log", "End" (the call stack must be empty before
+//    anything else can run).
+// 2. setTimeout hands its callback to the browser/Node timer system. When the
+//    timer ends, the callback is placed in the MACROTASK queue.
+// 3. Promise.resolve().then(...) places its callback in the MICROTASK queue
+//    immediately, because the Promise is already resolved.
+// 4. The Event Loop rule: after the current task finishes (the call stack is
+//    empty), the engine drains the ENTIRE microtask queue BEFORE picking the
+//    next macrotask. So the Promise callback runs first, then the timeout.
+//
+// FINAL ORDER:
+//   Start -> Synchronous log -> End -> Microtask -> Macrotask
+// ---------------------------------------------------------------------------
+
+OUTPUT
+------
+Start
+Synchronous log
+End
+Microtask: Promise.then callback
+Macrotask: setTimeout callback
+
+EXPLANATION
+-----------
+Event loop rule: run the current task -> empty the whole microtask queue
+(Promise callbacks) -> take the next macrotask (setTimeout callbacks).
+Even setTimeout(fn, 0) is a macrotask, so a resolved Promise always wins.
+
+
+
+##########################################################################
+##  Q3.  BUG TRACKER: CALLBACK TO PROMISE MIGRATION
+##  FILE : q3.js
+##########################################################################
+
+PROBLEM
+-------
+Original function:
+    function fetchBugs(callback) {
+      setTimeout(() => callback(["UI glitch", "API timeout", "Login failure"]), 1000);
+    }
+ * Convert it into a Promise-based version named getBugs().
+ * Log all bugs neatly using console.table().
+ * Simulate random API failure using a boolean and handle it using .catch().
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Wrap the old callback API in new Promise(): call fetchBugs and resolve()
+  inside its callback. The original function is kept unchanged.
+* console.table() works best with an array of OBJECTS, so each bug string is
+  converted to { ID, Bug }.
+* A boolean parameter (shouldFail) rejects the promise to simulate an API
+  failure; the test chooses it with Math.random() < 0.5.
+
+CODE
+----
+"use strict";
+
+// ---------- ORIGINAL callback-based function (kept as given) ----------
+function fetchBugs(callback) {
+  setTimeout(() => callback(["UI glitch", "API timeout", "Login failure"]), 1000);
+}
+
+// ---------- NEW Promise-based version ----------
+// shouldFail is a boolean used to simulate an API failure.
+function getBugs(shouldFail = false) {
+  return new Promise((resolve, reject) => {
+    if (shouldFail) {
+      // Simulated API failure: reject after 1 second, like a real request
+      setTimeout(() => reject(new Error("API request failed: server unavailable")), 1000);
+      return;
+    }
+    // Wrap the old callback API: resolve the Promise inside the callback
+    fetchBugs(bugs => resolve(bugs));
+  });
+}
+
+// Loads the bugs and prints them. Errors are handled with .catch().
+function loadBugs(shouldFail) {
+  return getBugs(shouldFail)
+    .then(bugs => {
+      // Convert the plain strings into objects so console.table() shows
+      // two clear columns (ID and Bug).
+      const bugRows = bugs.map((title, index) => ({ ID: index + 1, Bug: title }));
+      console.table(bugRows);
+    })
+    .catch(error => {
+      console.log(`Error: ${error.message}`);
+    });
+}
+
+console.log("=== Test 1: API works ===");
+loadBugs(false)
+  .then(() => {
+    console.log("\n=== Test 2: random API failure ===");
+    const apiShouldFail = Math.random() < 0.5; // random boolean
+    console.log(`apiShouldFail = ${apiShouldFail}`);
+    return loadBugs(apiShouldFail);
+  })
+  .then(() => console.log("\nDone."));
+
+OUTPUT - API WORKS (Test 2 forced to false)
+-------------------------------------------
+=== Test 1: API works ===
+┌─────────┬────┬─────────────────┐
+│ (index) │ ID │ Bug             │
+├─────────┼────┼─────────────────┤
+│ 0       │ 1  │ 'UI glitch'     │
+│ 1       │ 2  │ 'API timeout'   │
+│ 2       │ 3  │ 'Login failure' │
+└─────────┴────┴─────────────────┘
+
+=== Test 2: random API failure ===
+apiShouldFail = false
+┌─────────┬────┬─────────────────┐
+│ (index) │ ID │ Bug             │
+├─────────┼────┼─────────────────┤
+│ 0       │ 1  │ 'UI glitch'     │
+│ 1       │ 2  │ 'API timeout'   │
+│ 2       │ 3  │ 'Login failure' │
+└─────────┴────┴─────────────────┘
+
+Done.
+
+OUTPUT - API FAILS (Test 2 forced to true)
+------------------------------------------
+=== Test 1: API works ===
+┌─────────┬────┬─────────────────┐
+│ (index) │ ID │ Bug             │
+├─────────┼────┼─────────────────┤
+│ 0       │ 1  │ 'UI glitch'     │
+│ 1       │ 2  │ 'API timeout'   │
+│ 2       │ 3  │ 'Login failure' │
+└─────────┴────┴─────────────────┘
+
+=== Test 2: random API failure ===
+apiShouldFail = true
+Error: API request failed: server unavailable
+
+Done.
+
+EXPLANATION
+-----------
+getBugs() hides the callback from the caller: the caller just uses
+.then()/.catch(). This is called "promisification". Because both outcomes
+are handled inside loadBugs(), the program never crashes; it prints the
+error message instead.
+
+
+
+##########################################################################
+##  Q4.  DEVOPS DELAY: ASYNC TIMEOUT RACE
+##  FILE : q4.js
+##########################################################################
+
+PROBLEM
+-------
+Server A responds in 2 s and Server B in 3 s.
+ * Use Promise.all() to show "Deployment completed for all servers".
+ * Use Promise.race() to show "Fastest response:" for the server that
+   finishes first.
+ * Simulate random failure using Math.random() and handle it with .catch().
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Both promises must be created ONCE and shared by race() and all();
+  creating them twice would start 4 timers.
+* Promise.race settles with the FIRST promise that settles (win or fail).
+* Promise.all waits for ALL, and rejects at once if ANY promise rejects.
+* Since both timers run together, the total time is about 3 s, not 5 s.
+
+CODE
+----
+"use strict";
+
+// Probability that a server fails. 0 = never, 1 = always.
+const FAILURE_CHANCE = 0.25;
+
+// Simulates a deployment to one server.
+// Resolves with the server name after delayInMs, or randomly rejects.
+function deployToServer(serverName, delayInMs) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (Math.random() < FAILURE_CHANCE) {
+        reject(new Error(`${serverName} failed to respond`));
+      } else {
+        resolve(serverName);
+      }
+    }, delayInMs);
+  });
+}
+
+const startTime = Date.now();
+const elapsed = () => `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
+
+console.log("Deploying to Server A (2 s) and Server B (3 s)...\n");
+
+// Start both deployments ONCE so they run concurrently
+const serverA = deployToServer("Server A", 2000);
+const serverB = deployToServer("Server B", 3000);
+
+// Promise.race: settles as soon as the FIRST promise settles
+Promise.race([serverA, serverB])
+  .then(winner => {
+    console.log(`[${elapsed()}] Fastest response: ${winner}`);
+  })
+  .catch(error => {
+    console.log(`[${elapsed()}] Race failed: ${error.message}`);
+  });
+
+// Promise.all: waits for ALL promises; rejects immediately if any rejects
+Promise.all([serverA, serverB])
+  .then(results => {
+    console.log(`[${elapsed()}] Deployment completed for all servers`);
+    console.log("Responded:", results);
+  })
+  .catch(error => {
+    console.log(`[${elapsed()}] Deployment failed: ${error.message}`);
+  });
+
+// Total time is about 3 s (the slowest server), NOT 5 s, because both
+// timers run at the same time.
+
+OUTPUT - NO FAILURE (FAILURE_CHANCE = 0)
+----------------------------------------
+Deploying to Server A (2 s) and Server B (3 s)...
+
+[2.0s] Fastest response: Server A
+[3.0s] Deployment completed for all servers
+Responded: [ 'Server A', 'Server B' ]
+
+OUTPUT - FAILURE (FAILURE_CHANCE = 1)
+-------------------------------------
+Deploying to Server A (2 s) and Server B (3 s)...
+
+[2.0s] Race failed: Server A failed to respond
+[2.0s] Deployment failed: Server A failed to respond
+
+EXPLANATION
+-----------
+Every promise has a handler attached (race and all each have .catch()), so
+there is no "unhandled promise rejection" error even when a server fails.
+The elapsed-time labels [2.0s] and [3.0s] prove that the servers ran in
+parallel.
+
+
+
+##########################################################################
+##  Q5.  FRONTEND RUSH: AVOIDING CALLBACK HELL
+##  FILE : q5.js
+##########################################################################
+
+PROBLEM
+-------
+Pipeline with 5 async stages: design -> build -> test -> deploy -> celebrate.
+ * Each stage takes 1 second and logs its step.
+ * Implement first using nested callbacks (to show callback hell).
+ * Then rewrite using async/await for cleaner flow.
+ * Comment on why async/await improves readability.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Part 1 nests five setTimeout callbacks, creating the "pyramid of doom".
+* Part 2 turns each stage into a Promise and uses await, so the code is
+  flat and reads top to bottom.
+* Both parts run one after the other (Part 2 starts from the Part 1
+  finish callback) so their output does not mix.
+
+CODE
+----
+"use strict";
+
+const STAGE_DELAY = 1000; // every stage takes 1 second
+
+// =====================================================================
+// PART 1: CALLBACK HELL (nested callbacks)
+// =====================================================================
+function stageWithCallback(stageName, callback) {
+  setTimeout(() => {
+    console.log(`  ${stageName} complete`);
+    callback(); // go to the next stage
+  }, STAGE_DELAY);
+}
+
+function runWithCallbacks(onFinished) {
+  console.log("--- PART 1: Callback Hell ---");
+  stageWithCallback("Design", () => {
+    stageWithCallback("Build", () => {
+      stageWithCallback("Test", () => {
+        stageWithCallback("Deploy", () => {
+          stageWithCallback("Celebrate", () => {
+            console.log("Pipeline finished (callbacks)\n");
+            onFinished();
+          });
+        });
+      });
+    });
+  });
+  // Notice the "pyramid of doom": every new stage pushes the code further
+  // to the right, and error handling would be needed at every level.
+}
+
+// =====================================================================
+// PART 2: ASYNC / AWAIT (clean, top-to-bottom flow)
+// =====================================================================
+function stageWithPromise(stageName) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log(`  ${stageName} complete`);
+      resolve();
+    }, STAGE_DELAY);
+  });
+}
+
+async function runWithAsyncAwait() {
+  console.log("--- PART 2: async/await ---");
+  try {
+    await stageWithPromise("Design");
+    await stageWithPromise("Build");
+    await stageWithPromise("Test");
+    await stageWithPromise("Deploy");
+    await stageWithPromise("Celebrate");
+    console.log("Pipeline finished (async/await)");
+  } catch (error) {
+    // ONE try/catch covers all five stages
+    console.log(`Pipeline failed: ${error.message}`);
+  }
+}
+
+// Run Part 1 first; when it finishes, run Part 2 (so logs do not mix)
+runWithCallbacks(runWithAsyncAwait);
+
+// ---------------------------------------------------------------------
+// WHY ASYNC/AWAIT IMPROVES READABILITY
+//  1. Flat code: the stages are written in the same order they execute,
+//     with no nesting, so the code reads like normal synchronous code.
+//  2. Single error handling: one try/catch handles failures of every stage,
+//     instead of repeating error checks inside every nested callback.
+//  3. Easy to change: adding, removing or reordering a stage is a one-line
+//     change; with callbacks you must re-nest the whole pyramid.
+//  4. Easier debugging: stack traces and breakpoints follow a straight line.
+// ---------------------------------------------------------------------
+
+OUTPUT
+------
+--- PART 1: Callback Hell ---
+  Design complete
+  Build complete
+  Test complete
+  Deploy complete
+  Celebrate complete
+Pipeline finished (callbacks)
+
+--- PART 2: async/await ---
+  Design complete
+  Build complete
+  Test complete
+  Deploy complete
+  Celebrate complete
+Pipeline finished (async/await)
+
+EXPLANATION
+-----------
+Why async/await is better:
+ 1. Flat code: no nesting, stages are written in execution order.
+ 2. One try/catch handles errors of all stages.
+ 3. Adding or reordering a stage is a one-line change.
+ 4. Debugging and stack traces follow a straight line.
+
+
+
+##########################################################################
+##  Q6.  E-COMMERCE DASHBOARD: PRODUCT CARD FETCHER
+##  FILE : q6.js  (+ q6_bonus.html)
+##########################################################################
+
+PROBLEM
+-------
+Use the Fake Store API https://fakestoreapi.com/products
+ * Fetch the data using fetch().then() or async/await.
+ * For each product log: title, price (with $ prefix) and image URL.
+ * Bonus (optional): create HTML product cards dynamically using
+   document.createElement() and append them to the page.
+ * Handle errors using try/catch and display
+   "Failed to load products. Please try again." if the request fails.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* fetch() returns a Promise for the Response; response.json() returns a
+  second Promise for the data, so there are two awaits.
+* fetch() does NOT reject on HTTP errors such as 404 or 500, only on network
+  failure. Therefore response.ok is checked manually and an Error is thrown.
+* Network failure, bad status and invalid JSON all land in the same catch
+  block, which prints the required message.
+* The bonus runs in the browser (needs the DOM), so it is a separate HTML file
+  that builds each card with createElement() and textContent (safe against
+  HTML injection).
+
+CODE
+----
+"use strict";
+
+// Requires Node.js 18 or newer (fetch is built in) or any modern browser.
+const API_URL = "https://fakestoreapi.com/products";
+
+async function loadProducts() {
+  try {
+    // 1. Send the request and wait for the response headers
+    const response = await fetch(API_URL);
+
+    // fetch() does NOT reject on HTTP errors like 404/500, so check manually
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // 2. Wait for the body and parse it from JSON into an array of objects
+    const products = await response.json();
+
+    // 3. Log title, price (with $ prefix) and image URL of every product
+    products.forEach(product => {
+      console.log(`Product: ${product.title}`);
+      console.log(`Price: $${product.price}`);
+      console.log(`Image: ${product.image}`);
+      console.log(""); // blank line between products
+    });
+
+    console.log(`Total products loaded: ${products.length}`);
+  } catch (error) {
+    // Network failure, bad status code or invalid JSON all end up here
+    console.log("Failed to load products. Please try again.");
+    console.error(`(Details: ${error.message})`);
+  }
+}
+
+loadProducts();
+
+OUTPUT - SUCCESS (format; values come from the live API)
+--------------------------------------------------------
+Product: Fjallraven Backpack
+Price: $109.95
+Image: https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg
+
+... (the same three lines are printed for every remaining product) ...
+
+Total products loaded: <number of products returned by the API>
+
+OUTPUT - NETWORK ERROR (tested)
+-------------------------------
+Failed to load products. Please try again.
+(Details: fetch failed)
+
+OUTPUT - HTTP ERROR, e.g. 404 (tested)
+--------------------------------------
+Failed to load products. Please try again.
+(Details: HTTP error! status: 404)
+
+EXPLANATION
+-----------
+Run it with:  node q6.js   (Node.js 18+ and an internet connection).
+
+BONUS FILE: q6_bonus.html  (open in a browser)
+----------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fake Store - Product Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; margin: 0; padding: 20px; }
+    h1 { text-align: center; }
+    #status { text-align: center; font-weight: bold; }
+    #status.error { color: red; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; max-width: 1200px; margin: 20px auto; }
+    .card { background: #fff; border-radius: 8px; padding: 14px; text-align: center; box-shadow: 0 1px 5px rgba(0,0,0,0.15); }
+    .card img { height: 140px; max-width: 100%; object-fit: contain; }
+    .card h3 { font-size: 13px; margin: 10px 0 6px; }
+    .price { color: #0a7d4f; font-weight: bold; margin: 0; }
+  </style>
+</head>
+<body>
+  <h1>Fake Store - Product Dashboard</h1>
+  <p id="status">Loading products...</p>
+  <div id="productGrid" class="grid"></div>
+
+  <script>
+    const API_URL = "https://fakestoreapi.com/products";
+    const statusMessage = document.getElementById("status");
+    const productGrid = document.getElementById("productGrid");
+
+    // Builds one product card using document.createElement()
+    function createProductCard(product) {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const image = document.createElement("img");
+      image.src = product.image;
+      image.alt = product.title;
+
+      const title = document.createElement("h3");
+      title.textContent = product.title;      // textContent is safe (no HTML injection)
+
+      const price = document.createElement("p");
+      price.className = "price";
+      price.textContent = `$${product.price}`;
+
+      card.append(image, title, price);
+      return card;
+    }
+
+    async function loadProducts() {
+      try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const products = await response.json();
+
+        products.forEach(product => {
+          // Console output required by the assignment
+          console.log(`Product: ${product.title}`);
+          console.log(`Price: $${product.price}`);
+          console.log(`Image: ${product.image}`);
+          // Bonus: add the card to the page
+          productGrid.appendChild(createProductCard(product));
+        });
+
+        statusMessage.textContent = `${products.length} products loaded`;
+      } catch (error) {
+        statusMessage.textContent = "Failed to load products. Please try again.";
+        statusMessage.classList.add("error");
+        console.error(error);
+      }
+    }
+
+    loadProducts();
+  </script>
+</body>
+</html>
+
+The bonus page also logs every product to the browser console (F12 ->
+Console) in the same Product / Price / Image format, then adds a card with
+image, title and price to the grid.
+
+
+
+##########################################################################
+##  Q7.  THE LAZY LOADER: PROMISE COMBINATOR PRACTICE
+##  FILE : q7.js
+##########################################################################
+
+PROBLEM
+-------
+Use the given loaders:
+    function loadProfile()  { return new Promise(r => setTimeout(() => r("Profile Loaded"), 2000)); }
+    function loadPosts()    { return new Promise(r => setTimeout(() => r("Posts Loaded"), 1500)); }
+    function loadMessages() { return new Promise(r => setTimeout(() => r("Messages Loaded"), 1000)); }
+ * Use Promise.allSettled() to handle them together.
+ * Randomly reject one Promise.
+ * Print which modules succeeded or failed.
+ * Calculate total time taken using Date.now() before and after.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Promise.all would stop at the first failure and hide the other results.
+  Promise.allSettled NEVER rejects: it waits for every promise and returns
+  { status: "fulfilled", value } or { status: "rejected", reason } for each.
+* The three given loaders stay unchanged. To "randomly reject one", a
+  random index is chosen and that loader is wrapped so that its promise
+  rejects (at the moment it would have resolved).
+* All loaders start together, so the total time is about 2000 ms (the
+  slowest loader), not 4500 ms.
+
+CODE
+----
+"use strict";
+
+// ---------- The three loaders given in the assignment ----------
+function loadProfile()  { return new Promise(r => setTimeout(() => r("Profile Loaded"), 2000)); }
+function loadPosts()    { return new Promise(r => setTimeout(() => r("Posts Loaded"), 1500)); }
+function loadMessages() { return new Promise(r => setTimeout(() => r("Messages Loaded"), 1000)); }
+
+// Wraps a loader so that its Promise REJECTS (at the same time it would have
+// resolved). This keeps the original loaders unchanged.
+function forceFailure(loaderFunction, moduleName) {
+  return loaderFunction().then(() => {
+    throw new Error(`${moduleName} failed to load`);
+  });
+}
+
+const modules = [
+  { name: "Profile",  load: loadProfile },
+  { name: "Posts",    load: loadPosts },
+  { name: "Messages", load: loadMessages }
+];
+
+// Randomly choose which ONE module will fail
+const failingIndex = Math.floor(Math.random() * modules.length);
+
+async function loadDashboard() {
+  const startTime = Date.now();
+  console.log("Loading dashboard sections...");
+  console.log(`(Randomly chosen module to fail: ${modules[failingIndex].name})\n`);
+
+  // Start all loaders at the same time
+  const promises = modules.map((module, index) =>
+    index === failingIndex ? forceFailure(module.load, module.name) : module.load()
+  );
+
+  // allSettled NEVER rejects. It waits for every promise and returns an
+  // array of { status: "fulfilled", value } or { status: "rejected", reason }.
+  const results = await Promise.allSettled(promises);
+
+  const totalTime = Date.now() - startTime;
+
+  let successCount = 0;
+  results.forEach((result, index) => {
+    const moduleName = modules[index].name;
+    if (result.status === "fulfilled") {
+      successCount++;
+      console.log(`[SUCCESS] ${moduleName}: ${result.value}`);
+    } else {
+      console.log(`[FAILED ] ${moduleName}: ${result.reason.message}`);
+    }
+  });
+
+  console.log(`\nSucceeded: ${successCount}, Failed: ${results.length - successCount}`);
+  console.log(`Total time taken: ${totalTime} ms`);
+  // About 2000 ms = the slowest loader (Profile), not 4500 ms, because the
+  // three loaders run in parallel.
+}
+
+loadDashboard();
+
+OUTPUT (example run; the failing module is random - here: Posts)
+----------------------------------------------------------------
+Loading dashboard sections...
+(Randomly chosen module to fail: Posts)
+
+[SUCCESS] Profile: Profile Loaded
+[FAILED ] Posts: Posts failed to load
+[SUCCESS] Messages: Messages Loaded
+
+Succeeded: 2, Failed: 1
+Total time taken: 2003 ms
+
+EXPLANATION
+-----------
+The result array keeps the SAME ORDER as the input array, so
+results[index] can be matched with modules[index] to print the module name.
+The 3 ms difference over 2000 ms is normal timer overhead.
+
+
+
+##########################################################################
+##  Q8.  ORDER PROCESSING FLOW: ASYNC RETRY MECHANISM
+##  FILE : q8.js
+##########################################################################
+
+PROBLEM
+-------
+Create submitOrder() returning a Promise that fails 50% of the time. Create an
+async function processOrder() that tries up to 3 times using a loop + await,
+logs "Attempt X: Success" or "Attempt X: Failed", and throws "Order could
+not be processed" if all fail. Use try/catch to handle the final failure
+gracefully.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* A for loop from 1 to 3 with await inside try/catch gives the retry logic.
+* On success: log, then `return` (this leaves the loop, so no extra retry).
+* On failure: log and let the loop continue with the next attempt.
+* After the loop (all 3 failed): throw new Error("Order could not be
+  processed"). The caller's try/catch handles it gracefully.
+* Probability of final failure with a 50% chance: 0.5 x 0.5 x 0.5 = 12.5%.
+
+CODE
+----
+"use strict";
+
+const FAILURE_RATE = 0.5; // submitOrder fails 50% of the time
+const MAX_ATTEMPTS = 3;   // total tries before giving up
+
+// Returns a Promise that fails about 50% of the time
+function submitOrder() {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (Math.random() < FAILURE_RATE) {
+        reject(new Error("Server error"));
+      } else {
+        resolve("Order submitted successfully");
+      }
+    }, 500); // simulated network delay
+  });
+}
+
+// Retry logic: loop + await, up to MAX_ATTEMPTS times
+async function processOrder() {
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const result = await submitOrder(); // waits here; throws if rejected
+      console.log(`Attempt ${attempt}: Success`);
+      return result;                      // success -> leave the function (no more retries)
+    } catch (error) {
+      console.log(`Attempt ${attempt}: Failed`);
+      // loop continues with the next attempt
+    }
+  }
+  // Reaching this line means ALL attempts failed
+  throw new Error("Order could not be processed");
+}
+
+async function main() {
+  console.log("Processing your order...");
+  try {
+    const result = await processOrder();
+    console.log(`Result: ${result}`);
+  } catch (error) {
+    // Graceful handling of the final failure
+    console.log(`Final failure: ${error.message}`);
+    console.log("Please try again later or contact support.");
+  }
+}
+
+main();
+
+OUTPUT - SUCCESS ON FIRST TRY (FAILURE_RATE = 0)
+------------------------------------------------
+Processing your order...
+Attempt 1: Success
+Result: Order submitted successfully
+
+OUTPUT - ALL ATTEMPTS FAIL (FAILURE_RATE = 1)
+---------------------------------------------
+Processing your order...
+Attempt 1: Failed
+Attempt 2: Failed
+Attempt 3: Failed
+Final failure: Order could not be processed
+Please try again later or contact support.
+
+OUTPUT - NORMAL RUN (FAILURE_RATE = 0.5)
+----------------------------------------
+Any of these can appear:
+  Attempt 1: Success
+  Attempt 1: Failed -> Attempt 2: Success
+  Attempt 1: Failed -> Attempt 2: Failed -> Attempt 3: Success
+  Attempt 1, 2 and 3: Failed -> "Order could not be processed"
+
+EXPLANATION
+-----------
+await turns a rejected promise into a thrown exception, which is why a normal
+try/catch inside a loop can implement retries. The error is thrown only
+after the loop, so a single failed attempt never stops the process.
+
+
+
+##########################################################################
+##  Q9.  DEBUGGING THE EVENT LOOP
+##  FILE : q9.js
+##########################################################################
+
+PROBLEM
+-------
+Run:
+    console.log("Script start");
+    setTimeout(() => console.log("Timeout callback"), 0);
+    Promise.resolve().then(() => console.log("Promise callback"));
+    console.log("Script end");
+Before running, write your predicted output order in comments. Then execute
+and compare actual results. Explain why Promises (microtasks) execute before
+setTimeout (macrotasks).
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Synchronous logs come first: "Script start", then "Script end".
+* The Promise callback is a microtask, the timeout is a macrotask, so the
+  order after the synchronous code is: Promise callback, Timeout callback.
+* The program records the real order in an array and compares it with the
+  prediction automatically (a 50 ms timer runs the comparison last).
+
+CODE
+----
+"use strict";
+
+// ---------------------------------------------------------------------------
+// STEP 1: PREDICTION (written BEFORE running the code)
+//
+//   Predicted output order:
+//     1. Script start
+//     2. Script end
+//     3. Promise callback
+//     4. Timeout callback
+// ---------------------------------------------------------------------------
+
+const predictedOrder = [
+  "Script start",
+  "Script end",
+  "Promise callback",
+  "Timeout callback"
+];
+
+// Helper: prints the message AND records it, so we can compare with the
+// prediction at the end.
+const actualOrder = [];
+function log(message) {
+  actualOrder.push(message);
+  console.log(message);
+}
+
+// ---------- The code given in the assignment ----------
+log("Script start");
+setTimeout(() => log("Timeout callback"), 0);
+Promise.resolve().then(() => log("Promise callback"));
+log("Script end");
+
+// ---------------------------------------------------------------------------
+// STEP 2: COMPARE actual result with the prediction.
+// This timer is set to 50 ms, so it runs after everything above is done.
+// ---------------------------------------------------------------------------
+setTimeout(() => {
+  console.log("\nPredicted:", predictedOrder.join(" -> "));
+  console.log("Actual   :", actualOrder.join(" -> "));
+  console.log("Prediction correct?", predictedOrder.join() === actualOrder.join());
+}, 50);
+
+// ---------------------------------------------------------------------------
+// STEP 3: EXPLANATION - why Promises (microtasks) run before setTimeout (macrotasks)
+//
+// 1. The whole script is one task on the call stack. The synchronous lines
+//    run first: "Script start" and "Script end".
+// 2. setTimeout(fn, 0) does not run fn immediately. The timer is handed to
+//    the environment (Node/browser). When it expires, fn goes into the
+//    MACROTASK queue.
+// 3. Promise.resolve().then(fn) is already resolved, so fn goes straight into
+//    the MICROTASK queue.
+// 4. The Event Loop always follows this order:
+//       run current task -> empty the whole microtask queue ->
+//       render (browser) -> take ONE macrotask -> repeat
+//    So "Promise callback" (microtask) runs before "Timeout callback"
+//    (macrotask), even though the timeout delay is 0 ms.
+// ---------------------------------------------------------------------------
+
+OUTPUT
+------
+Script start
+Script end
+Promise callback
+Timeout callback
+
+Predicted: Script start -> Script end -> Promise callback -> Timeout callback
+Actual   : Script start -> Script end -> Promise callback -> Timeout callback
+Prediction correct? true
+
+EXPLANATION
+-----------
+The prediction matches the real result. The reason: after the script (one
+macrotask) ends, the event loop drains the entire microtask queue before it
+takes the next macrotask. A 0 ms timeout only means "as soon as possible,
+but after the current task and all microtasks".
+
+
+
+##########################################################################
+##  Q10.  THE FINAL DELIVERY: ASYNC PIPELINE DEBUGGER
+##  FILE : q10.js
+##########################################################################
+
+PROBLEM
+-------
+Steps: takeOrder -> prepare -> pack -> dispatch -> deliver. Each returns a
+Promise with a random 1-2 s delay and success/failure. Implement
+runPipeline() using async/await and try/catch. Log: Start Pipeline, Step 1:
+Order taken, Step 2: Food prepared, Step 3: Package ready, Step 4: Out for
+delivery, Delivery completed!. If any step fails, print "Pipeline failed!".
+Add detailed comments explaining async behavior and event loop control
+flow.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* One helper (simulateStep) creates the 1-2 s promise and randomly rejects,
+  so the five step functions stay short and each has its own error message.
+* runPipeline() awaits the steps in order. A rejection makes await throw, so
+  the catch block prints "Pipeline failed!" and the remaining steps are
+  skipped.
+* The line printed after runPipeline() shows that the async function pauses at
+  its first await and hands control back to the caller.
+
+CODE
+----
+"use strict";
+
+// Probability that any single step fails (0 = never, 1 = always)
+const FAILURE_CHANCE = 0.1;
+
+// Random delay between 1000 ms and 2000 ms
+function getRandomDelay() {
+  return 1000 + Math.floor(Math.random() * 1001);
+}
+
+// Every step is a function returning a Promise that settles after 1-2 s.
+// It resolves on success and rejects with an Error on (random) failure.
+function simulateStep(failureMessage) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (Math.random() < FAILURE_CHANCE) {
+        reject(new Error(failureMessage));
+      } else {
+        resolve();
+      }
+    }, getRandomDelay());
+  });
+}
+
+function takeOrder() { return simulateStep("Restaurant could not accept the order"); }
+function prepare()   { return simulateStep("Kitchen failed to prepare the food"); }
+function pack()      { return simulateStep("Packaging failed"); }
+function dispatch()  { return simulateStep("No delivery partner available"); }
+function deliver()   { return simulateStep("Delivery partner could not reach the address"); }
+
+// Runs the five steps strictly one after another
+async function runPipeline() {
+  console.log("Start Pipeline");
+
+  try {
+    await takeOrder();
+    console.log("Step 1: Order taken");
+
+    await prepare();
+    console.log("Step 2: Food prepared");
+
+    await pack();
+    console.log("Step 3: Package ready");
+
+    await dispatch();
+    console.log("Step 4: Out for delivery");
+
+    await deliver();
+    console.log("Delivery completed!");
+  } catch (error) {
+    // A rejected Promise makes `await` throw, so ANY failed step jumps here
+    // and the remaining steps are skipped.
+    console.log("Pipeline failed!");
+    console.log(`Reason: ${error.message}`);
+  }
+}
+
+runPipeline();
+
+// This line runs right after "Start Pipeline" is printed, NOT after the
+// pipeline ends. See the explanation below.
+console.log("[main script] runPipeline() started; the main script has finished.");
+
+// ---------------------------------------------------------------------------
+// ASYNC BEHAVIOUR AND EVENT LOOP CONTROL FLOW
+//
+// 1. runPipeline() is an async function. It runs SYNCHRONOUSLY until the
+//    first `await`: it prints "Start Pipeline" and calls takeOrder(), which
+//    starts a timer (1-2 s) and returns a pending Promise.
+// 2. At `await`, the function is PAUSED and control returns to the caller.
+//    The call stack becomes free, so the "[main script]" line prints
+//    immediately. Nothing blocks while the timer is running.
+// 3. When the timer expires, the callback is queued as a macrotask. The Event
+//    Loop runs it, which resolves (or rejects) the Promise.
+// 4. Resolving the Promise puts the continuation of runPipeline() in the
+//    MICROTASK queue. The function RESUMES after the `await`, prints the
+//    step message and reaches the next `await`, and the cycle repeats.
+// 5. If a Promise rejects, `await` throws an exception at that line and
+//    control jumps into the catch block.
+// ---------------------------------------------------------------------------
+
+OUTPUT - ALL STEPS SUCCEED (FAILURE_CHANCE = 0)
+-----------------------------------------------
+Start Pipeline
+[main script] runPipeline() started; the main script has finished.
+Step 1: Order taken
+Step 2: Food prepared
+Step 3: Package ready
+Step 4: Out for delivery
+Delivery completed!
+
+OUTPUT - FIRST STEP FAILS (FAILURE_CHANCE = 1)
+----------------------------------------------
+Start Pipeline
+[main script] runPipeline() started; the main script has finished.
+Pipeline failed!
+Reason: Restaurant could not accept the order
+
+EXPLANATION
+-----------
+Control flow in short: the async function runs synchronously until its first
+await, then pauses and returns control to the caller. When a timer fires,
+the event loop resolves the promise and the function resumes from the
+microtask queue until the next await. A rejection becomes an exception at
+the await line and control jumps to catch.
+
+
+
+
+##########################################################################
+#                                                                        #
+#                        END OF ASSIGNMENT 6                             #
+#      Submitted by: Ansh Shukla  |  Roll No: 2415000257                 #
+#                    GLA University, Mathura                             #
+#                                                                        #
+##########################################################################
