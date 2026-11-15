@@ -1,0 +1,1167 @@
+##########################################################################
+#                                                                        #
+#                 JAVASCRIPT  -  ASSIGNMENT 8  (SOLUTIONS)               #
+#     Classes | Inheritance | Polymorphism | Array Methods | Errors      #
+#                                                                        #
+##########################################################################
+
+  +--------------------------------------------------------------------+
+  |  STUDENT DETAILS                                                   |
+  +--------------------------------------------------------------------+
+  |  Name                : Ansh Shukla                                 |
+  |  University Roll No  : 2415000257                                  |
+  |  University          : GLA University, Mathura                     |
+  |  Course / Branch     : B.Tech - Computer Science & Engineering     |
+  |  Subject             : JavaScript (Object-Oriented Programming)    |
+  |  Assignment          : Assignment 8                                |
+  |  Date of Submission  : 15 November 2026                            |
+  +--------------------------------------------------------------------+
+
+
+==========================================================================
+  TABLE OF CONTENTS
+==========================================================================
+
+   No.   Topic                                          File
+  -----  ---------------------------------------------  ---------
+   Q1    Student Result Processing (reduce + Classes)   q1.js
+   Q2    Online Food Ordering (map + Error Handling)    q2.js
+   Q3    Product Discount System                        q3.js
+   Q4    Employee Inheritance                           q4.js
+   Q5    Ride-Sharing Application                       q5.js
+   Q6    E-Commerce Inventory System                    q6.js
+   Q7    Banking Application                            q7.js
+   Q8    Movie Ticket Booking System                    q8.js
+   Q9    Fitness App Analytics                          q9.js
+
+
+==========================================================================
+  HOW TO RUN (VS CODE / TERMINAL)
+==========================================================================
+
+   1. Every question below is a separate file (see the "FILE" line in its
+      header). Copy each CODE block into its own file with that name.
+   2. Open the terminal in VS Code (Ctrl + `) and run:   node q1.js
+      (same for q2 ... q9). Node.js 14 or newer is enough (private
+      fields #name are used in Q7 and Q9; static fields in Q5).
+   3. Only core JavaScript (ES6+) is used. No frameworks or libraries.
+   4. None of the programs use random values, so the output you get is the
+      same as the OUTPUT shown under each question.
+   5. Each question has: Problem, Analysis, Code, Output and Explanation.
+
+
+==========================================================================
+  TESTING NOTE
+==========================================================================
+   All nine files were run with Node.js v22 and the outputs shown below are
+   the real outputs. Where the question does not fix a value, an assumption
+   was made and is stated in that question's ANALYSIS (grade limits in Q1,
+   low-stock limit in Q6, fare rates in Q5).
+
+
+
+##########################################################################
+##  Q1.  STUDENT RESULT PROCESSING (reduce + CLASSES)
+##  FILE : q1.js
+##########################################################################
+
+PROBLEM
+-------
+You are given an array of marks of a student. Create a Student class with
+properties name and marks[]. Add method calculateAverage() using reduce().
+Return a grade based on the average: A/B/C/F. Test the class for 3 students.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Class Student with name and marks (an array).
+* calculateAverage(): reduce() adds all marks, then divide by the count.
+* Grade scale (the question does not fix one, so this is assumed):
+      average >= 90 -> A,  >= 75 -> B,  >= 50 -> C,  otherwise F
+* The constructor validates the data (name present, marks not empty, every
+  mark a number from 0 to 100). Without this, an empty array would give
+  0 / 0 = NaN and a wrong grade.
+* The three students are chosen to give three different grades (A, B, F);
+  a fourth test shows grade C and the invalid-data errors.
+
+CODE
+----
+"use strict";
+
+// Student class: stores the name and the marks, calculates average and grade.
+class Student {
+  constructor(name, marks) {
+    // Validate the input so that the object can never be in a wrong state
+    if (typeof name !== "string" || name.trim() === "") {
+      throw new Error("Student name is required");
+    }
+    if (!Array.isArray(marks) || marks.length === 0) {
+      throw new Error(`${name}: marks array must not be empty`);
+    }
+    if (!marks.every(mark => Number.isFinite(mark) && mark >= 0 && mark <= 100)) {
+      throw new Error(`${name}: every mark must be a number between 0 and 100`);
+    }
+
+    this.name = name.trim();
+    this.marks = [...marks]; // copy, so outside changes do not affect the student
+  }
+
+  // Average of all marks, calculated with reduce()
+  calculateAverage() {
+    const totalMarks = this.marks.reduce((sum, mark) => sum + mark, 0);
+    return totalMarks / this.marks.length;
+  }
+
+  // Grade rule: A >= 90, B >= 75, C >= 50, otherwise F
+  getGrade() {
+    const average = this.calculateAverage();
+    if (average >= 90) return "A";
+    if (average >= 75) return "B";
+    if (average >= 50) return "C";
+    return "F";
+  }
+
+  printReport() {
+    console.log(
+      `Name: ${this.name.padEnd(8)} | Marks: [${this.marks.join(", ")}] | ` +
+      `Average: ${this.calculateAverage().toFixed(2)} | Grade: ${this.getGrade()}`
+    );
+  }
+}
+
+// ---------- Test the class for 3 students (one for each grade A, B, F) ----------
+const students = [
+  new Student("Ansh", [95, 92, 98, 90]),   // average 93.75 -> A
+  new Student("Riya", [80, 76, 82, 78]),   // average 79.00 -> B
+  new Student("Karan", [40, 35, 45, 30])   // average 37.50 -> F
+];
+
+console.log("===== STUDENT RESULTS =====");
+students.forEach(student => student.printReport());
+
+// ---------- Extra: grade C and invalid data ----------
+console.log("\n===== EXTRA TESTS =====");
+new Student("Meera", [60, 55, 70]).printReport(); // average 61.67 -> C
+
+try {
+  new Student("Broken", []);
+} catch (error) {
+  console.log(`Error: ${error.message}`);
+}
+try {
+  new Student("Wrong", [50, 120]);
+} catch (error) {
+  console.log(`Error: ${error.message}`);
+}
+
+OUTPUT
+------
+===== STUDENT RESULTS =====
+Name: Ansh     | Marks: [95, 92, 98, 90] | Average: 93.75 | Grade: A
+Name: Riya     | Marks: [80, 76, 82, 78] | Average: 79.00 | Grade: B
+Name: Karan    | Marks: [40, 35, 45, 30] | Average: 37.50 | Grade: F
+
+===== EXTRA TESTS =====
+Name: Meera    | Marks: [60, 55, 70] | Average: 61.67 | Grade: C
+Error: Broken: marks array must not be empty
+Error: Wrong: every mark must be a number between 0 and 100
+
+EXPLANATION
+-----------
+reduce((sum, mark) => sum + mark, 0) starts with sum = 0 and adds one mark
+at a time. The marks array is copied with [...marks] so that changing the
+original array later cannot silently change the student's result.
+
+
+
+##########################################################################
+##  Q2.  ONLINE FOOD ORDERING (map + ERROR HANDLING)
+##  FILE : q2.js
+##########################################################################
+
+PROBLEM
+-------
+You have an array of menu items with prices. Write calculateBill(orderItems)
+that: uses map() to get the price list, uses reduce() to calculate the total,
+throws an error if an invalid item is ordered, and use try-catch to show
+meaningful messages.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* menuItems is an array of { name, price }; orderItems is an array of the
+  names the customer ordered.
+* map(): turns every ordered name into its price. Inside map, find() looks
+  the item up in the menu (case does not matter). If it is not found, an
+  Error is thrown, which stops the whole calculation.
+* reduce(): adds the price list into the total bill.
+* An empty order is also rejected, because a bill of Rs. 0 makes no sense.
+* The function only throws. The try-catch is in placeOrder(), which shows
+  a readable message to the customer.
+
+CODE
+----
+"use strict";
+
+// Menu items with prices
+const menuItems = [
+  { name: "Burger", price: 120 },
+  { name: "Pizza", price: 250 },
+  { name: "Pasta", price: 180 },
+  { name: "Fries", price: 90 },
+  { name: "Coke", price: 60 }
+];
+
+// orderItems is an array of item names, e.g. ["Burger", "Coke"]
+function calculateBill(orderItems, menu = menuItems) {
+  if (!Array.isArray(orderItems) || orderItems.length === 0) {
+    throw new Error("Order is empty. Please select at least one item");
+  }
+
+  // map(): convert every ordered item name into its price (price list).
+  // An item that is not on the menu throws an error immediately.
+  const priceList = orderItems.map(itemName => {
+    const menuItem = menu.find(
+      item => item.name.toLowerCase() === String(itemName).trim().toLowerCase()
+    );
+    if (!menuItem) {
+      throw new Error(`Invalid item ordered: "${itemName}" is not on the menu`);
+    }
+    return menuItem.price;
+  });
+
+  // reduce(): add all prices to get the total bill
+  const total = priceList.reduce((sum, price) => sum + price, 0);
+
+  return { priceList, total };
+}
+
+// try-catch shows a meaningful message instead of crashing the program
+function placeOrder(orderItems) {
+  try {
+    const { priceList, total } = calculateBill(orderItems);
+    console.log(`Order  : ${orderItems.join(", ")}`);
+    console.log(`Prices : [${priceList.join(", ")}]`);
+    console.log(`Total  : Rs. ${total}\n`);
+  } catch (error) {
+    console.log(`Order  : ${JSON.stringify(orderItems)}`);
+    console.log(`Error  : ${error.message}\n`);
+  }
+}
+
+console.log("--- Valid order ---");
+placeOrder(["Burger", "Fries", "Coke"]);
+
+console.log("--- Same item twice (case does not matter) ---");
+placeOrder(["pizza", "Pizza", "Coke"]);
+
+console.log("--- Invalid item ---");
+placeOrder(["Burger", "Sushi"]);
+
+console.log("--- Empty order ---");
+placeOrder([]);
+
+OUTPUT
+------
+--- Valid order ---
+Order  : Burger, Fries, Coke
+Prices : [120, 90, 60]
+Total  : Rs. 270
+
+--- Same item twice (case does not matter) ---
+Order  : pizza, Pizza, Coke
+Prices : [250, 250, 60]
+Total  : Rs. 560
+
+--- Invalid item ---
+Order  : ["Burger","Sushi"]
+Error  : Invalid item ordered: "Sushi" is not on the menu
+
+--- Empty order ---
+Order  : []
+Error  : Order is empty. Please select at least one item
+
+EXPLANATION
+-----------
+Throwing inside map() is allowed: the exception leaves map() and travels up
+to the nearest try-catch. Keeping calculateBill() free of console output and
+doing the printing in placeOrder() keeps the logic reusable.
+
+
+
+##########################################################################
+##  Q3.  PRODUCT DISCOUNT SYSTEM
+##  FILE : q3.js
+##########################################################################
+
+PROBLEM
+-------
+Create a Product constructor function with name and price. Add a prototype
+method applyDiscount(percent) that returns the new price. Now create 3
+products and apply different discounts. Show how abstraction helps simplify
+operations.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* The question asks for a CONSTRUCTOR FUNCTION (not a class), so Product is
+  a normal function used with new, and applyDiscount is added to
+  Product.prototype.
+* The method RETURNS the new price and does not change this.price, exactly
+  as the question says.
+* Three products with three different discounts: 10%, 15% and 25%.
+* Abstraction: the caller writes product.applyDiscount(15) and does not need
+  to know the formula. The program compares it with writing the formula by
+  hand and shows that the discount rule lives in only ONE place.
+
+CODE
+----
+"use strict";
+
+// Constructor function (the old, pre-class way of creating objects)
+function Product(name, price) {
+  if (typeof name !== "string" || name.trim() === "") {
+    throw new Error("Product name is required");
+  }
+  if (typeof price !== "number" || !Number.isFinite(price) || price <= 0) {
+    throw new Error(`Invalid price for ${name}: price must be a positive number`);
+  }
+  this.name = name.trim();
+  this.price = price;
+}
+
+// Prototype method: shared by all products. It RETURNS the new price and
+// does not change the original price.
+Product.prototype.applyDiscount = function (percent) {
+  if (typeof percent !== "number" || !Number.isFinite(percent) || percent < 0 || percent > 100) {
+    throw new RangeError("Discount must be a number between 0 and 100");
+  }
+  return this.price - (this.price * percent) / 100;
+};
+
+// ---------- Create 3 products and apply different discounts ----------
+const laptop = new Product("Laptop", 55000);
+const phone = new Product("Phone", 20000);
+const headphones = new Product("Headphones", 2999);
+
+console.log("===== DISCOUNTS =====");
+const deals = [
+  { product: laptop, percent: 10 },
+  { product: phone, percent: 15 },
+  { product: headphones, percent: 25 }
+];
+
+deals.forEach(({ product, percent }) => {
+  const newPrice = product.applyDiscount(percent); // one simple call
+  console.log(
+    `${product.name.padEnd(11)} Rs. ${String(product.price).padStart(6)}  -${percent}%  ->  Rs. ${newPrice.toFixed(2)}`
+  );
+});
+
+// ---------- Abstraction ----------
+// The caller only knows WHAT to do (applyDiscount) and not HOW the price is
+// calculated. Without the method, the formula would be repeated everywhere:
+console.log("\n===== ABSTRACTION =====");
+const manualPrice = phone.price - (phone.price * 15) / 100; // formula repeated by hand
+console.log(`Manual formula   : Rs. ${manualPrice.toFixed(2)}`);
+console.log(`applyDiscount()  : Rs. ${phone.applyDiscount(15).toFixed(2)}`);
+console.log("Same result, but if the discount rule changes, only the method must be edited.");
+
+// The original price is unchanged (the method only returns a value)
+console.log(`\nOriginal price of ${laptop.name} is still Rs. ${laptop.price}`);
+
+// All products share ONE copy of the method through the prototype
+console.log(`Method shared via prototype: ${laptop.applyDiscount === phone.applyDiscount}`);
+
+// ---------- Invalid discount ----------
+try {
+  laptop.applyDiscount(150);
+} catch (error) {
+  console.log(`\nError: ${error.message}`);
+}
+
+OUTPUT
+------
+===== DISCOUNTS =====
+Laptop      Rs.  55000  -10%  ->  Rs. 49500.00
+Phone       Rs.  20000  -15%  ->  Rs. 17000.00
+Headphones  Rs.   2999  -25%  ->  Rs. 2249.25
+
+===== ABSTRACTION =====
+Manual formula   : Rs. 17000.00
+applyDiscount()  : Rs. 17000.00
+Same result, but if the discount rule changes, only the method must be edited.
+
+Original price of Laptop is still Rs. 55000
+Method shared via prototype: true
+
+Error: Discount must be a number between 0 and 100
+
+EXPLANATION
+-----------
+Because the method is on the prototype, all products share one copy of it
+(the output prints true for that check). Validation of the percent (0 to
+100) is hidden inside the method, so every caller is protected
+automatically.
+
+
+
+##########################################################################
+##  Q4.  EMPLOYEE INHERITANCE
+##  FILE : q4.js
+##########################################################################
+
+PROBLEM
+-------
+Create classes Employee and Manager. Employee has properties name and
+department. Manager inherits Employee and overrides a work() method. Create
+objects and show runtime polymorphism.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Employee: name, department and a work() method.
+* Manager extends Employee: super(name, department) calls the parent
+  constructor; teamSize is an extra property; work() is OVERRIDDEN (same
+  name, different behaviour).
+* Runtime polymorphism: one array holds both Employee and Manager objects
+  and one call, person.work(), runs the version that belongs to the real
+  object. The version is chosen at run time, not at write time.
+
+CODE
+----
+"use strict";
+
+// Parent class
+class Employee {
+  constructor(name, department) {
+    this.name = name;
+    this.department = department;
+  }
+
+  work() {
+    console.log(`${this.name} (${this.department}) is doing the assigned daily tasks.`);
+  }
+}
+
+// Child class: inherits name and department from Employee
+class Manager extends Employee {
+  constructor(name, department, teamSize) {
+    super(name, department); // call the parent constructor
+    this.teamSize = teamSize;
+  }
+
+  // Method OVERRIDING: same name, new behaviour
+  work() {
+    console.log(`${this.name} (${this.department}) is managing a team of ${this.teamSize} people.`);
+  }
+}
+
+// ---------- Create objects ----------
+const employee1 = new Employee("Amit", "Engineering");
+const manager1 = new Manager("Sara", "Engineering", 8);
+const employee2 = new Employee("Neha", "Marketing");
+const manager2 = new Manager("Rahul", "Marketing", 5);
+
+// ---------- Runtime polymorphism ----------
+// One array holds different types, and one call (work) behaves differently.
+// JavaScript decides at RUNTIME which version of work() to run, depending
+// on the real object.
+const staff = [employee1, manager1, employee2, manager2];
+
+console.log("===== RUNTIME POLYMORPHISM =====");
+staff.forEach(person => person.work());
+
+// A function written once for "any Employee" works for Manager as well
+function startWorkDay(person) {
+  console.log(`\nStarting the work day for ${person.name}...`);
+  person.work();
+}
+startWorkDay(employee1);
+startWorkDay(manager1);
+
+console.log("\n===== TYPE CHECK =====");
+console.log("manager1 instanceof Manager :", manager1 instanceof Manager);
+console.log("manager1 instanceof Employee:", manager1 instanceof Employee);
+console.log("employee1 instanceof Manager:", employee1 instanceof Manager);
+
+OUTPUT
+------
+===== RUNTIME POLYMORPHISM =====
+Amit (Engineering) is doing the assigned daily tasks.
+Sara (Engineering) is managing a team of 8 people.
+Neha (Marketing) is doing the assigned daily tasks.
+Rahul (Marketing) is managing a team of 5 people.
+
+Starting the work day for Amit...
+Amit (Engineering) is doing the assigned daily tasks.
+
+Starting the work day for Sara...
+Sara (Engineering) is managing a team of 8 people.
+
+===== TYPE CHECK =====
+manager1 instanceof Manager : true
+manager1 instanceof Employee: true
+employee1 instanceof Manager: false
+
+EXPLANATION
+-----------
+startWorkDay(person) is written once and works for any Employee, including
+Manager objects, because a Manager IS-A Employee (instanceof confirms
+this). employee1 instanceof Manager is false, so the relationship works in
+one direction only.
+
+
+
+##########################################################################
+##  Q5.  RIDE-SHARING APPLICATION
+##  FILE : q5.js
+##########################################################################
+
+PROBLEM
+-------
+Create classes: User (name, rating), Driver (inherits from User, vehicle
+details) and Trip (fromLocation, toLocation, distance). Write a
+calculateFare() method inside Trip using distance. Throw an error if
+distance is negative or not provided. Use try/catch to handle the error and
+show a proper message.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Driver extends User and adds vehicleModel and vehicleNumber.
+* Trip stores the locations and the distance as given. The distance is
+  checked inside calculateFare(), so a Trip with a bad distance can be
+  created and the error appears when the fare is requested.
+* Fare rule (assumed, the question gives none):
+      fare = base fare Rs. 50 + distance x Rs. 12 per km
+  stored in static fields (Trip.BASE_FARE and Trip.RATE_PER_KM).
+* Errors: distance undefined/null (not provided), not a number, negative.
+  A distance of 0 is allowed and gives just the base fare.
+* showFare() uses try/catch and prints a proper message.
+
+CODE
+----
+"use strict";
+
+class User {
+  constructor(name, rating) {
+    if (typeof rating !== "number" || rating < 0 || rating > 5) {
+      throw new Error("Rating must be a number between 0 and 5");
+    }
+    this.name = name;
+    this.rating = rating;
+  }
+}
+
+// Driver inherits from User and adds the vehicle details
+class Driver extends User {
+  constructor(name, rating, vehicleModel, vehicleNumber) {
+    super(name, rating);
+    this.vehicleModel = vehicleModel;
+    this.vehicleNumber = vehicleNumber;
+  }
+
+  getDetails() {
+    return `${this.name} (rating ${this.rating}) drives ${this.vehicleModel} [${this.vehicleNumber}]`;
+  }
+}
+
+class Trip {
+  static BASE_FARE = 50;   // Rs. charged for every trip
+  static RATE_PER_KM = 12; // Rs. charged for every kilometre
+
+  constructor(fromLocation, toLocation, distance) {
+    this.fromLocation = fromLocation;
+    this.toLocation = toLocation;
+    this.distance = distance; // validated in calculateFare()
+  }
+
+  // fare = base fare + (distance x rate per km)
+  calculateFare() {
+    if (this.distance === undefined || this.distance === null) {
+      throw new Error("Distance is not provided");
+    }
+    if (typeof this.distance !== "number" || Number.isNaN(this.distance)) {
+      throw new TypeError(`Distance must be a number, received: ${this.distance}`);
+    }
+    if (this.distance < 0) {
+      throw new RangeError(`Distance cannot be negative (${this.distance} km)`);
+    }
+    return Trip.BASE_FARE + this.distance * Trip.RATE_PER_KM;
+  }
+}
+
+// try/catch shows a proper message to the user instead of crashing
+function showFare(trip) {
+  try {
+    const fare = trip.calculateFare();
+    console.log(`${trip.fromLocation} -> ${trip.toLocation} (${trip.distance} km): Fare = Rs. ${fare}`);
+  } catch (error) {
+    console.log(`${trip.fromLocation} -> ${trip.toLocation}: Could not calculate fare. ${error.message}`);
+  }
+}
+
+// ---------- Users and drivers ----------
+const rider = new User("Ansh", 4.8);
+const driver = new Driver("Ravi", 4.6, "Maruti Dzire", "UP80 AB 1234");
+console.log(`Rider : ${rider.name} (rating ${rider.rating})`);
+console.log(`Driver: ${driver.getDetails()}`);
+console.log(`driver instanceof User: ${driver instanceof User}\n`);
+
+// ---------- Trips ----------
+console.log("===== FARE CALCULATION =====");
+showFare(new Trip("Mathura", "Agra", 58));         // valid
+showFare(new Trip("Campus", "Station", 0));        // zero km -> only the base fare
+showFare(new Trip("Campus", "Market", -5));        // negative distance
+showFare(new Trip("Campus", "Airport"));           // distance not provided
+showFare(new Trip("Campus", "Mall", "ten"));       // not a number
+
+OUTPUT
+------
+Rider : Ansh (rating 4.8)
+Driver: Ravi (rating 4.6) drives Maruti Dzire [UP80 AB 1234]
+driver instanceof User: true
+
+===== FARE CALCULATION =====
+Mathura -> Agra (58 km): Fare = Rs. 746
+Campus -> Station (0 km): Fare = Rs. 50
+Campus -> Market: Could not calculate fare. Distance cannot be negative (-5 km)
+Campus -> Airport: Could not calculate fare. Distance is not provided
+Campus -> Mall: Could not calculate fare. Distance must be a number, received: ten
+
+EXPLANATION
+-----------
+Different error types are used on purpose: Error for a missing value,
+TypeError for a wrong type and RangeError for a negative number. Check:
+58 km -> 50 + 58 x 12 = Rs. 746.
+
+
+
+##########################################################################
+##  Q6.  E-COMMERCE INVENTORY SYSTEM
+##  FILE : q6.js
+##########################################################################
+
+PROBLEM
+-------
+Product objects { id, name, category, price, stock }. Write functions using
+array methods: getLowStockProducts() using filter(), sortProductsByPrice()
+using sort(), calculateTotalInventoryValue() using reduce(),
+groupByCategory() using reduce() + object grouping. Test using multiple
+category products.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* 7 products in 3 categories (Electronics, Clothing, Grocery).
+* getLowStockProducts: filter() keeps products with stock below a limit.
+  The limit is not given, so it is a parameter with the default 5.
+* sortProductsByPrice: sort() CHANGES the array it is called on, so a copy
+  [...items] is sorted. The original order stays safe. The comparator
+  a.price - b.price sorts numbers correctly (default sort() would compare
+  them as text).
+* calculateTotalInventoryValue: reduce() adds price x stock of every
+  product.
+* groupByCategory: reduce() with an object {} as the starting value; the
+  category is the key and the value is an array of products.
+
+CODE
+----
+"use strict";
+
+// Inventory data with several categories
+const products = [
+  { id: 1, name: "Laptop", category: "Electronics", price: 55000, stock: 5 },
+  { id: 2, name: "Mouse", category: "Electronics", price: 499, stock: 2 },
+  { id: 3, name: "T-Shirt", category: "Clothing", price: 799, stock: 40 },
+  { id: 4, name: "Jeans", category: "Clothing", price: 1999, stock: 3 },
+  { id: 5, name: "Rice Bag", category: "Grocery", price: 650, stock: 25 },
+  { id: 6, name: "Olive Oil", category: "Grocery", price: 850, stock: 1 },
+  { id: 7, name: "Headphones", category: "Electronics", price: 2999, stock: 12 }
+];
+
+// 1. filter(): products whose stock is below the limit (default 5)
+function getLowStockProducts(items, limit = 5) {
+  return items.filter(product => product.stock < limit);
+}
+
+// 2. sort(): cheapest first. [...items] makes a copy, because sort()
+//    changes the array it is called on and we must not change the original.
+function sortProductsByPrice(items, order = "asc") {
+  return [...items].sort((a, b) =>
+    order === "desc" ? b.price - a.price : a.price - b.price
+  );
+}
+
+// 3. reduce(): total value of the stock = sum of (price x stock)
+function calculateTotalInventoryValue(items) {
+  return items.reduce((total, product) => total + product.price * product.stock, 0);
+}
+
+// 4. reduce() + object grouping: { category: [products...] }
+function groupByCategory(items) {
+  return items.reduce((groups, product) => {
+    if (!groups[product.category]) {
+      groups[product.category] = []; // create the group on first use
+    }
+    groups[product.category].push(product);
+    return groups;
+  }, {});
+}
+
+// ---------- Test ----------
+console.log("===== 1. LOW STOCK PRODUCTS (stock < 5) =====");
+getLowStockProducts(products).forEach(p =>
+  console.log(`${p.name.padEnd(11)} stock: ${p.stock}`)
+);
+
+console.log("\n===== 2. SORTED BY PRICE (low to high) =====");
+sortProductsByPrice(products).forEach(p =>
+  console.log(`${p.name.padEnd(11)} Rs. ${p.price}`)
+);
+console.log("First product of original array is still:", products[0].name);
+
+console.log("\n===== 3. TOTAL INVENTORY VALUE =====");
+console.log(`Rs. ${calculateTotalInventoryValue(products).toLocaleString("en-IN")}`);
+
+console.log("\n===== 4. GROUPED BY CATEGORY =====");
+const grouped = groupByCategory(products);
+Object.entries(grouped).forEach(([category, list]) => {
+  console.log(`${category} (${list.length}): ${list.map(p => p.name).join(", ")}`);
+});
+
+OUTPUT
+------
+===== 1. LOW STOCK PRODUCTS (stock < 5) =====
+Mouse       stock: 2
+Jeans       stock: 3
+Olive Oil   stock: 1
+
+===== 2. SORTED BY PRICE (low to high) =====
+Mouse       Rs. 499
+Rice Bag    Rs. 650
+T-Shirt     Rs. 799
+Olive Oil   Rs. 850
+Jeans       Rs. 1999
+Headphones  Rs. 2999
+Laptop      Rs. 55000
+First product of original array is still: Laptop
+
+===== 3. TOTAL INVENTORY VALUE =====
+Rs. 3,67,043
+
+===== 4. GROUPED BY CATEGORY =====
+Electronics (3): Laptop, Mouse, Headphones
+Clothing (2): T-Shirt, Jeans
+Grocery (2): Rice Bag, Olive Oil
+
+EXPLANATION
+-----------
+Hand check of the total: 275000 + 998 + 31960 + 5997 + 16250 + 850 + 35988
+= 367043, which matches the program (Rs. 3,67,043 in Indian number
+format).
+
+
+
+##########################################################################
+##  Q7.  BANKING APPLICATION
+##  FILE : q7.js
+##########################################################################
+
+PROBLEM
+-------
+Create a BankAccount class with private field #balance. Add methods
+deposit(amount), withdraw(amount) (throw error if insufficient balance) and
+getBalance(). Demonstrate valid deposits and invalid withdrawals (handled
+using try/catch).
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* #balance is a real private field (ES2022). Only code inside the class can
+  read or change it, so nobody can set the balance directly.
+* The only ways to change it are deposit() and withdraw(), and both reject
+  invalid amounts (not a number, zero, negative). withdraw() also throws if
+  the amount is more than the balance.
+* The validation is written once in a private static method and used by
+  both methods.
+* The demo shows valid deposits, a valid withdrawal, and four invalid
+  operations caught with try/catch.
+* A privacy check proves that #balance cannot be reached from outside.
+
+CODE
+----
+"use strict";
+
+class BankAccount {
+  #balance; // PRIVATE field: can only be used inside this class
+
+  constructor(accountHolder, openingBalance = 0) {
+    if (typeof openingBalance !== "number" || !Number.isFinite(openingBalance) || openingBalance < 0) {
+      throw new Error("Opening balance must be zero or a positive number");
+    }
+    this.accountHolder = accountHolder; // public
+    this.#balance = openingBalance;     // private
+  }
+
+  deposit(amount) {
+    BankAccount.#validateAmount(amount);
+    this.#balance += amount;
+    return this.#balance;
+  }
+
+  withdraw(amount) {
+    BankAccount.#validateAmount(amount);
+    if (amount > this.#balance) {
+      throw new Error(
+        `Insufficient balance: tried to withdraw Rs. ${amount} but balance is Rs. ${this.#balance}`
+      );
+    }
+    this.#balance -= amount;
+    return this.#balance;
+  }
+
+  getBalance() {
+    return this.#balance;
+  }
+
+  // Private static helper used by deposit() and withdraw()
+  static #validateAmount(amount) {
+    if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
+      throw new Error(`Invalid amount: ${amount}. Amount must be a positive number`);
+    }
+  }
+}
+
+const account = new BankAccount("Ansh", 5000);
+console.log(`Account holder: ${account.accountHolder}`);
+console.log(`Opening balance: Rs. ${account.getBalance()}`);
+
+// ---------- Valid deposits ----------
+console.log("\n===== VALID DEPOSITS =====");
+console.log(`Deposit 2000 -> balance Rs. ${account.deposit(2000)}`);
+console.log(`Deposit 500  -> balance Rs. ${account.deposit(500)}`);
+
+// ---------- Valid withdrawal ----------
+console.log("\n===== VALID WITHDRAWAL =====");
+console.log(`Withdraw 1500 -> balance Rs. ${account.withdraw(1500)}`);
+
+// ---------- Invalid operations handled with try/catch ----------
+console.log("\n===== INVALID OPERATIONS =====");
+const invalidTests = [
+  { label: "Withdraw 50000", action: () => account.withdraw(50000) },
+  { label: "Withdraw -100", action: () => account.withdraw(-100) },
+  { label: "Deposit 0", action: () => account.deposit(0) },
+  { label: "Deposit \"abc\"", action: () => account.deposit("abc") }
+];
+invalidTests.forEach(({ label, action }) => {
+  try {
+    action();
+    console.log(`${label}: done`);
+  } catch (error) {
+    console.log(`${label}: ${error.message}`);
+  }
+});
+
+console.log(`\nFinal balance: Rs. ${account.getBalance()}`);
+
+// ---------- Proof that #balance is really private ----------
+console.log("\n===== PRIVACY CHECK =====");
+console.log("account.balance  :", account.balance);   // undefined (no such public property)
+console.log("account.#balance : not allowed (see below)");
+console.log("Object.keys      :", Object.keys(account));
+console.log("JSON.stringify   :", JSON.stringify(account));
+try {
+  // Reading a private field from outside the class is a SyntaxError.
+  // new Function() is used so that the error can be caught and shown.
+  new Function("acc", "return acc.#balance");
+} catch (error) {
+  console.log(`${error.name}: ${error.message}`);
+}
+
+OUTPUT
+------
+Account holder: Ansh
+Opening balance: Rs. 5000
+
+===== VALID DEPOSITS =====
+Deposit 2000 -> balance Rs. 7000
+Deposit 500  -> balance Rs. 7500
+
+===== VALID WITHDRAWAL =====
+Withdraw 1500 -> balance Rs. 6000
+
+===== INVALID OPERATIONS =====
+Withdraw 50000: Insufficient balance: tried to withdraw Rs. 50000 but balance is Rs. 6000
+Withdraw -100: Invalid amount: -100. Amount must be a positive number
+Deposit 0: Invalid amount: 0. Amount must be a positive number
+Deposit "abc": Invalid amount: abc. Amount must be a positive number
+
+Final balance: Rs. 6000
+
+===== PRIVACY CHECK =====
+account.balance  : undefined
+account.#balance : not allowed (see below)
+Object.keys      : [ 'accountHolder' ]
+JSON.stringify   : {"accountHolder":"Ansh"}
+SyntaxError: Private field '#balance' must be declared in an enclosing class
+
+EXPLANATION
+-----------
+Encapsulation: the data (#balance) is hidden and is changed only through
+methods that enforce the rules. account.balance is undefined, the private
+field does not appear in Object.keys() or JSON.stringify(), and writing
+account.#balance outside the class is a SyntaxError (shown using
+new Function() so that the error can be caught and printed).
+
+
+
+##########################################################################
+##  Q8.  MOVIE TICKET BOOKING SYSTEM
+##  FILE : q8.js
+##########################################################################
+
+PROBLEM
+-------
+Create a class MovieTicket with properties movieName, seatNo, price. Create
+a class OnlineTicket that inherits and adds convenienceFee and a method
+getTotalAmount(). Additionally add a method to MovieTicket.prototype called
+printTicket() and call it using OnlineTicket objects (demonstrate prototype
+chain working).
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* OnlineTicket extends MovieTicket, adds convenienceFee and
+  getTotalAmount() = price + convenienceFee.
+* printTicket is added with MovieTicket.prototype.printTicket = function...
+  AFTER the classes are defined. This works because classes are built on
+  prototypes, and objects look up methods on the prototype when they are
+  called.
+* An OnlineTicket does not have printTicket itself; JavaScript finds it by
+  walking up the chain:
+      onlineTicket -> OnlineTicket.prototype -> MovieTicket.prototype
+* printTicket checks whether getTotalAmount exists, so one method prints a
+  normal ticket (3 lines) and an online ticket (with fee and total).
+
+CODE
+----
+"use strict";
+
+class MovieTicket {
+  constructor(movieName, seatNo, price) {
+    this.movieName = movieName;
+    this.seatNo = seatNo;
+    this.price = price;
+  }
+}
+
+// Child class: inherits movieName, seatNo and price
+class OnlineTicket extends MovieTicket {
+  constructor(movieName, seatNo, price, convenienceFee) {
+    super(movieName, seatNo, price);
+    this.convenienceFee = convenienceFee;
+  }
+
+  getTotalAmount() {
+    return this.price + this.convenienceFee;
+  }
+}
+
+// Method added to MovieTicket.prototype AFTER the classes were created.
+// Every MovieTicket AND every OnlineTicket can use it (prototype chain).
+MovieTicket.prototype.printTicket = function () {
+  console.log("-------------- TICKET --------------");
+  console.log(`Movie : ${this.movieName}`);
+  console.log(`Seat  : ${this.seatNo}`);
+  console.log(`Price : Rs. ${this.price}`);
+  // Only online tickets have getTotalAmount(), so check before using it
+  if (typeof this.getTotalAmount === "function") {
+    console.log(`Fee   : Rs. ${this.convenienceFee}`);
+    console.log(`Total : Rs. ${this.getTotalAmount()}`);
+  }
+  console.log("------------------------------------");
+};
+
+const counterTicket = new MovieTicket("Interstellar", "B12", 250);
+const onlineTicket = new OnlineTicket("Inception", "C07", 300, 30);
+
+console.log("===== COUNTER TICKET =====");
+counterTicket.printTicket();
+
+console.log("\n===== ONLINE TICKET (printTicket is inherited) =====");
+onlineTicket.printTicket();
+
+// ---------- Prototype chain demonstration ----------
+console.log("\n===== PROTOTYPE CHAIN =====");
+console.log("Own property 'printTicket' on onlineTicket?:", onlineTicket.hasOwnProperty("printTicket"));
+console.log("Defined on MovieTicket.prototype?          :", MovieTicket.prototype.hasOwnProperty("printTicket"));
+console.log("Found by looking up the chain?             :", typeof onlineTicket.printTicket === "function");
+console.log("onlineTicket -> OnlineTicket.prototype     :",
+  Object.getPrototypeOf(onlineTicket) === OnlineTicket.prototype);
+console.log("OnlineTicket.prototype -> MovieTicket.prototype:",
+  Object.getPrototypeOf(OnlineTicket.prototype) === MovieTicket.prototype);
+console.log("Same function shared by both tickets?      :",
+  counterTicket.printTicket === onlineTicket.printTicket);
+
+OUTPUT
+------
+===== COUNTER TICKET =====
+-------------- TICKET --------------
+Movie : Interstellar
+Seat  : B12
+Price : Rs. 250
+------------------------------------
+
+===== ONLINE TICKET (printTicket is inherited) =====
+-------------- TICKET --------------
+Movie : Inception
+Seat  : C07
+Price : Rs. 300
+Fee   : Rs. 30
+Total : Rs. 330
+------------------------------------
+
+===== PROTOTYPE CHAIN =====
+Own property 'printTicket' on onlineTicket?: false
+Defined on MovieTicket.prototype?          : true
+Found by looking up the chain?             : true
+onlineTicket -> OnlineTicket.prototype     : true
+OnlineTicket.prototype -> MovieTicket.prototype: true
+Same function shared by both tickets?      : true
+
+EXPLANATION
+-----------
+The checks at the bottom prove the chain: hasOwnProperty is false on the
+online ticket and true on MovieTicket.prototype, and both tickets use the
+SAME function object (one shared copy). Check: 300 + 30 = Rs. 330.
+
+
+
+##########################################################################
+##  Q9.  FITNESS APP ANALYTICS
+##  FILE : q9.js
+##########################################################################
+
+PROBLEM
+-------
+Given workout data for users A, B and C, create a FitnessAnalytics class
+with methods: getActiveUsers() (steps > 7000 using filter()),
+getAverageCalories() (using reduce()), getUserSummary() (using map() to
+format as messages). Throw an error if the dataset is empty. Execute all
+methods for the given data.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* The data is kept in a private field #workouts (a copy of the array).
+* getActiveUsers: filter() with steps > 7000 -> users A and B.
+* getAverageCalories: reduce() sums 300 + 500 + 200 = 1000, divided by 3 =
+  333.33.
+* getUserSummary: map() turns every record into a readable message.
+* Empty dataset: every method first calls the private method
+  #ensureDataExists(), which throws. Without it, the average of an empty
+  array would be 0 / 0 = NaN, a silent wrong answer.
+* An empty dataset can still be created, so the program shows that all three
+  methods throw an error for it.
+
+CODE
+----
+"use strict";
+
+class FitnessAnalytics {
+  #workouts; // private copy of the data
+
+  constructor(workouts) {
+    if (!Array.isArray(workouts)) {
+      throw new TypeError("Workout data must be an array");
+    }
+    this.#workouts = [...workouts];
+  }
+
+  // Every method calls this first, so an empty dataset always throws
+  #ensureDataExists() {
+    if (this.#workouts.length === 0) {
+      throw new Error("Dataset is empty: no workout data available");
+    }
+  }
+
+  // Users with more than 7000 steps, using filter()
+  getActiveUsers() {
+    this.#ensureDataExists();
+    return this.#workouts.filter(entry => entry.steps > 7000);
+  }
+
+  // Average calories, using reduce()
+  getAverageCalories() {
+    this.#ensureDataExists();
+    const totalCalories = this.#workouts.reduce((sum, entry) => sum + entry.calories, 0);
+    return totalCalories / this.#workouts.length;
+  }
+
+  // Summary messages, using map()
+  getUserSummary() {
+    this.#ensureDataExists();
+    return this.#workouts.map(
+      entry => `User ${entry.user} walked ${entry.steps} steps and burned ${entry.calories} calories`
+    );
+  }
+}
+
+const workoutData = [
+  { user: "A", steps: 8000, calories: 300 },
+  { user: "B", steps: 12000, calories: 500 },
+  { user: "C", steps: 4000, calories: 200 }
+];
+
+const analytics = new FitnessAnalytics(workoutData);
+
+console.log("===== getActiveUsers() (steps > 7000) =====");
+analytics.getActiveUsers().forEach(entry =>
+  console.log(`User ${entry.user}: ${entry.steps} steps`)
+);
+
+console.log("\n===== getAverageCalories() =====");
+console.log(`Average calories: ${analytics.getAverageCalories().toFixed(2)}`);
+
+console.log("\n===== getUserSummary() =====");
+analytics.getUserSummary().forEach(message => console.log(message));
+
+// ---------- Empty dataset: every method throws ----------
+console.log("\n===== EMPTY DATASET =====");
+const emptyAnalytics = new FitnessAnalytics([]);
+["getActiveUsers", "getAverageCalories", "getUserSummary"].forEach(methodName => {
+  try {
+    emptyAnalytics[methodName]();
+  } catch (error) {
+    console.log(`${methodName}(): ${error.message}`);
+  }
+});
+
+OUTPUT
+------
+===== getActiveUsers() (steps > 7000) =====
+User A: 8000 steps
+User B: 12000 steps
+
+===== getAverageCalories() =====
+Average calories: 333.33
+
+===== getUserSummary() =====
+User A walked 8000 steps and burned 300 calories
+User B walked 12000 steps and burned 500 calories
+User C walked 4000 steps and burned 200 calories
+
+===== EMPTY DATASET =====
+getActiveUsers(): Dataset is empty: no workout data available
+getAverageCalories(): Dataset is empty: no workout data available
+getUserSummary(): Dataset is empty: no workout data available
+
+EXPLANATION
+-----------
+The check is in one private method and called by all three public methods,
+so the rule cannot be forgotten in one of them. The constructor accepts only
+an array (TypeError otherwise).
+
+
+
+
+##########################################################################
+#                                                                        #
+#                        END OF ASSIGNMENT 8                             #
+#      Submitted by: Ansh Shukla  |  Roll No: 2415000257                 #
+#                    GLA University, Mathura                             #
+#                                                                        #
+##########################################################################
