@@ -1,0 +1,1546 @@
+##########################################################################
+#                                                                        #
+#                 JAVASCRIPT  -  ASSIGNMENT 7  (SOLUTIONS)               #
+#        DOM Manipulation | Events | Event Delegation | Forms           #
+#                                                                        #
+##########################################################################
+
+  +--------------------------------------------------------------------+
+  |  STUDENT DETAILS                                                   |
+  +--------------------------------------------------------------------+
+  |  Name                : Ansh Shukla                                 |
+  |  University Roll No  : 2415000257                                  |
+  |  University          : GLA University, Mathura                     |
+  |  Course / Branch     : B.Tech - Computer Science & Engineering     |
+  |  Subject             : JavaScript (DOM and Events)                 |
+  |  Assignment          : Assignment 7                                |
+  |  Date of Submission  : 18 November 2026                            |
+  +--------------------------------------------------------------------+
+
+
+==========================================================================
+  TABLE OF CONTENTS
+==========================================================================
+
+   No.   Topic                                          Files
+  -----  ---------------------------------------------  ------------------
+   Q1    Dynamic Product List Manager (Event Delegation) q1.html + q1.js
+   Q2    Live Character Counter with Warning Behavior    q2.html + q2.js
+   Q3    Multi-Step Form with Next/Back & Validation     q3.html + q3.js
+   Q4    Theme Switcher Using Attribute Manipulation     q4.html + q4.js
+   Q5    Image Gallery with Modal Preview                q5.html + q5.js
+   Q6    Real-Time Table Filter Using input Event        q6.html + q6.js
+   Q7    Detect Mouse Path & Coordinates Logger          q7.html + q7.js
+   Q8    Custom Dropdown Using Only JavaScript           q8.html + q8.js
+   Q9    Form Submit Blocker with preventDefault()       q9.html + q9.js
+
+
+==========================================================================
+  HOW TO RUN (VS CODE / BROWSER)
+==========================================================================
+
+   1. Every question has TWO files: qN.html (page structure and CSS) and
+      qN.js (the JavaScript of that question). The assignment asks for a
+      separate .js file per question, so the HTML links it with
+      <script src="qN.js"></script>.
+   2. Copy each CODE block below into a file with the name shown above the
+      block. Keep qN.html and qN.js in the SAME folder.
+   3. Open the .html file in a browser: double-click it, or right-click in
+      VS Code -> "Open with Live Server". These programs use the DOM
+      (document, buttons, events), which exists only in the browser, so
+      they cannot be run with "node q1.js".
+   4. Open the browser console with F12 to see any errors (there are none).
+   5. Only HTML, CSS and core JavaScript (ES6+) are used. No frameworks or
+      libraries.
+   6. Each question has: Problem, Analysis, Code, How to test, Explanation.
+
+
+==========================================================================
+  TESTING NOTE
+==========================================================================
+   All nine pages were opened in a real Chromium browser and operated by an
+   automated script (clicking, typing, pasting, double-clicking, pressing
+   keys). 94 checks were run and all passed, with no console errors. The
+   checks are listed under HOW TO TEST in each question.
+
+   Q5 loads photos from the internet (picsum.photos). If a photo cannot be
+   loaded (for example offline), a coloured placeholder with the photo
+   number is shown instead, so the gallery works in both cases.
+
+
+
+##########################################################################
+##  Q1.  DYNAMIC PRODUCT LIST MANAGER (Add, Edit, Delete - Event Delegation)
+##  FILES: q1.html  +  q1.js
+##########################################################################
+
+PROBLEM
+-------
+Create a product list application where:
+ * User can add new products using an input box
+ * Each product appears with Edit and Delete buttons
+ * Editing allows inline text editing
+ * Use event delegation to handle Edit/Delete on parent <ul>
+ * If user clicks outside the edited item, the edit mode should auto-save
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* The list is built at run time, so items do not exist when the page loads.
+  A listener on every button would have to be added for each new item.
+  EVENT DELEGATION avoids this: ONE click listener on the parent <ul> checks
+  event.target.closest(".edit-btn") / ".delete-btn" and acts on the right item.
+* Inline editing: when Edit is clicked, the name <span> is replaced by a text
+  <input> showing the current name. The button changes to "Save".
+* Auto-save: a click listener on the document saves the item being edited
+  whenever the click target is NOT inside that item.
+* Extra rules for a robust page: Enter saves, Esc cancels, empty text keeps
+  the old name, blank product names are not added, and only one item is
+  edited at a time (starting a second edit saves the first one).
+* textContent is used (not innerHTML), so typed text can never inject HTML.
+
+CODE - FILE 1 of 2:  q1.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Product List Manager</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; display: flex; justify-content: center; padding: 30px; }
+    .card { background: #fff; padding: 25px 30px; border-radius: 8px; width: 420px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    h2 { text-align: center; margin-top: 0; }
+    .add-row { display: flex; gap: 8px; }
+    .add-row input { flex: 1; padding: 9px; border: 1px solid #aaa; border-radius: 4px; }
+    button { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; color: #fff; font-size: 14px; }
+    #addButton { background: #2d6cdf; }
+    ul { list-style: none; padding: 0; margin: 18px 0 0; }
+    .product-item { display: flex; align-items: center; gap: 8px; padding: 10px; border-bottom: 1px solid #e3e6ea; }
+    .product-item.editing { background: #fff8d6; }
+    .product-name { flex: 1; word-break: break-word; }
+    .edit-input { flex: 1; padding: 6px; border: 1px solid #2d6cdf; border-radius: 4px; font-size: 14px; }
+    .edit-btn { background: #e08a00; }
+    .delete-btn { background: #d64545; }
+    #emptyMessage { text-align: center; color: #777; margin-top: 18px; }
+    .hint { font-size: 12px; color: #666; margin-top: 14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Product List Manager</h2>
+    <div class="add-row">
+      <input type="text" id="productInput" placeholder="Enter product name" autocomplete="off">
+      <button type="button" id="addButton">Add</button>
+    </div>
+    <ul id="productList"></ul>
+    <p id="emptyMessage">No products yet. Add your first product.</p>
+    <p class="hint">Edit: change the text, then press Enter, click Save or click anywhere outside the item (auto-save). Press Esc to cancel.</p>
+  </div>
+  <script src="q1.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q1.js  (the JavaScript of this question)
+------------------------------------------------------------
+"use strict";
+
+const productInput = document.getElementById("productInput");
+const addButton = document.getElementById("addButton");
+const productList = document.getElementById("productList");
+const emptyMessage = document.getElementById("emptyMessage");
+
+// The <li> that is currently in edit mode (only one item can be edited at a time)
+let editingItem = null;
+
+// Shows the "No products yet" message only when the list is empty
+function updateEmptyMessage() {
+  emptyMessage.hidden = productList.children.length > 0;
+}
+
+// Builds one <li>: product name + Edit button + Delete button
+function createProductItem(productName) {
+  const item = document.createElement("li");
+  item.className = "product-item";
+
+  const nameSpan = document.createElement("span");
+  nameSpan.className = "product-name";
+  nameSpan.textContent = productName; // textContent is safe (no HTML injection)
+
+  const editButton = document.createElement("button");
+  editButton.type = "button";
+  editButton.className = "edit-btn";
+  editButton.textContent = "Edit";
+
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.className = "delete-btn";
+  deleteButton.textContent = "Delete";
+
+  item.append(nameSpan, editButton, deleteButton);
+  return item;
+}
+
+function addProduct() {
+  const productName = productInput.value.trim();
+  if (productName === "") {
+    productInput.focus(); // ignore empty names
+    return;
+  }
+  productList.appendChild(createProductItem(productName));
+  productInput.value = "";
+  productInput.focus();
+  updateEmptyMessage();
+}
+
+// Switches an item to edit mode: the name <span> is replaced by a text <input>
+function startEdit(item) {
+  if (editingItem === item) return;
+  if (editingItem) saveEdit(editingItem); // finish the previous edit first
+
+  const nameSpan = item.querySelector(".product-name");
+  const editInput = document.createElement("input");
+  editInput.type = "text";
+  editInput.className = "edit-input";
+  editInput.value = nameSpan.textContent;
+  editInput.dataset.original = nameSpan.textContent; // remembered for Esc / empty text
+
+  nameSpan.replaceWith(editInput);
+  item.querySelector(".edit-btn").textContent = "Save";
+  item.classList.add("editing");
+  editingItem = item;
+
+  editInput.focus();
+  editInput.select();
+}
+
+// Leaves edit mode and keeps the new text (empty text restores the old name)
+function finishEdit(item, keepChanges) {
+  const editInput = item.querySelector(".edit-input");
+  if (!editInput) return;
+
+  const newName = keepChanges ? editInput.value.trim() : "";
+  const nameSpan = document.createElement("span");
+  nameSpan.className = "product-name";
+  nameSpan.textContent = newName || editInput.dataset.original;
+
+  editInput.replaceWith(nameSpan);
+  item.querySelector(".edit-btn").textContent = "Edit";
+  item.classList.remove("editing");
+  if (editingItem === item) editingItem = null;
+}
+
+const saveEdit = item => finishEdit(item, true);
+const cancelEdit = item => finishEdit(item, false);
+
+// ---------- EVENT DELEGATION ----------
+// ONE listener on the parent <ul> handles the buttons of ALL items, including
+// items that are added later. event.target tells us which button was clicked.
+productList.addEventListener("click", event => {
+  const item = event.target.closest(".product-item");
+  if (!item) return;
+
+  if (event.target.closest(".delete-btn")) {
+    if (editingItem === item) editingItem = null;
+    item.remove();
+    updateEmptyMessage();
+  } else if (event.target.closest(".edit-btn")) {
+    if (editingItem === item) {
+      saveEdit(item); // the button shows "Save" while editing
+    } else {
+      startEdit(item);
+    }
+  }
+});
+
+// Delegated keyboard handling inside the edit box: Enter = save, Esc = cancel
+productList.addEventListener("keydown", event => {
+  if (!event.target.classList.contains("edit-input")) return;
+  const item = event.target.closest(".product-item");
+  if (event.key === "Enter") {
+    event.preventDefault();
+    saveEdit(item);
+  } else if (event.key === "Escape") {
+    cancelEdit(item);
+  }
+});
+
+// ---------- AUTO-SAVE ----------
+// A click anywhere outside the item that is being edited saves it.
+document.addEventListener("click", event => {
+  if (editingItem && !editingItem.contains(event.target)) {
+    saveEdit(editingItem);
+  }
+});
+
+addButton.addEventListener("click", addProduct);
+productInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") addProduct();
+});
+
+updateEmptyMessage();
+
+HOW TO TEST IT (open q1.html in the browser)
+---------------------------------------------
+1. Type "Laptop", click Add. Add "Mouse" and "Phone" (Enter also adds).
+2. Click Edit on "Mouse": a text box appears and the button says Save.
+3. Change the text to "Gaming Mouse" and click on an empty part of the page:
+   the new name is saved automatically (auto-save).
+4. Click Edit, type, press Enter -> saved. Press Esc instead -> cancelled.
+5. Click Edit on one item and then Edit on another: the first is saved.
+6. Click Delete -> the item is removed. With no items, a message appears.
+
+EXPLANATION
+-----------
+Why delegation works: a click on a button "bubbles" up to its parents, so
+the <ul> receives it even though the button was created later. closest()
+finds the <li> that owns the clicked button.
+
+Order of handlers for a click on a second item's Edit button: the <ul>
+listener runs first (saves the old item, starts the new edit), then the
+document listener runs and sees that the click is inside the item being
+edited, so it does not save again.
+
+
+
+##########################################################################
+##  Q2.  LIVE CHARACTER COUNTER WITH WARNING BEHAVIOR
+##  FILES: q2.html  +  q2.js
+##########################################################################
+
+PROBLEM
+-------
+Build a text area that:
+ * Shows remaining characters (max 100 char)
+ * Turns the counter yellow at 20 chars left
+ * Turns red at 0 and prevents further typing using preventDefault()
+ * A button "Reset" clears everything
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* remaining = 100 - textarea.value.length, updated on every change.
+* Colours are CSS classes toggled from JavaScript: "warning" (yellow) when
+  remaining is 20 or less (and above 0), "danger" (red) at 0.
+* Blocking: the maxlength attribute is NOT used, because the question wants
+  preventDefault(). A keydown listener cancels any key that would add a
+  character once the length is 100. Keys that add nothing (Backspace, arrows,
+  Ctrl+C) and typing over a selected text are still allowed.
+* Pasting could bypass the keydown rule, so a paste listener inserts only as
+  many characters as still fit. An input listener is a safety net for
+  drag-and-drop and phone keyboards.
+* Reset empties the box, restores "100 characters left" and removes the
+  colours.
+
+CODE - FILE 1 of 2:  q2.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Character Counter</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; display: flex; justify-content: center; padding: 30px; }
+    .card { background: #fff; padding: 25px 30px; border-radius: 8px; width: 420px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    h2 { text-align: center; margin-top: 0; }
+    textarea { width: 100%; height: 130px; padding: 10px; border: 2px solid #aaa; border-radius: 4px; box-sizing: border-box; font-size: 15px; resize: vertical; }
+    .footer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+    #counter { padding: 6px 12px; border-radius: 14px; font-weight: bold; background: #e6f4ea; color: #1e6b34; }
+    #counter.warning { background: #ffe066; color: #5c4700; }   /* yellow: 20 or fewer left */
+    #counter.danger { background: #d64545; color: #fff; }       /* red: 0 left */
+    #resetButton { padding: 8px 16px; border: none; border-radius: 4px; background: #555; color: #fff; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Live Character Counter</h2>
+    <textarea id="textBox" placeholder="Start typing (max 100 characters)..."></textarea>
+    <div class="footer-row">
+      <span id="counter" aria-live="polite">100 characters left</span>
+      <button type="button" id="resetButton">Reset</button>
+    </div>
+  </div>
+  <script src="q2.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q2.js  (the JavaScript of this question)
+------------------------------------------------------------
+"use strict";
+
+const MAX_CHARACTERS = 100;
+const WARNING_LIMIT = 20; // counter turns yellow at 20 characters left
+
+const textBox = document.getElementById("textBox");
+const counter = document.getElementById("counter");
+const resetButton = document.getElementById("resetButton");
+
+// Updates the number and the colour of the counter
+function updateCounter() {
+  const remaining = MAX_CHARACTERS - textBox.value.length;
+  counter.textContent = `${remaining} ${remaining === 1 ? "character" : "characters"} left`;
+
+  counter.classList.toggle("danger", remaining <= 0);                           // red at 0
+  counter.classList.toggle("warning", remaining > 0 && remaining <= WARNING_LIMIT); // yellow at 20 or less
+}
+
+// Keys that never add a character (Backspace, arrows, Ctrl+C ...) must stay allowed.
+// A key adds a character if key.length === 1 (a, 5, space, @ ...) or it is Enter.
+function isCharacterKey(event) {
+  if (event.ctrlKey || event.metaKey || event.altKey) return false; // shortcuts
+  return event.key.length === 1 || event.key === "Enter";
+}
+
+// STOP typing at the limit with preventDefault()
+textBox.addEventListener("keydown", event => {
+  const hasSelection = textBox.selectionStart !== textBox.selectionEnd; // typing replaces the selection
+  if (textBox.value.length >= MAX_CHARACTERS && isCharacterKey(event) && !hasSelection) {
+    event.preventDefault();
+  }
+});
+
+// Pasting could also exceed the limit, so only the part that fits is inserted
+textBox.addEventListener("paste", event => {
+  event.preventDefault();
+  const pastedText = event.clipboardData.getData("text");
+  const selectedLength = textBox.selectionEnd - textBox.selectionStart;
+  const freeSpace = MAX_CHARACTERS - (textBox.value.length - selectedLength);
+  if (freeSpace <= 0) return;
+
+  textBox.setRangeText(pastedText.slice(0, freeSpace), textBox.selectionStart, textBox.selectionEnd, "end");
+  updateCounter();
+});
+
+// Safety net for other input methods (drag and drop, mobile keyboards)
+textBox.addEventListener("input", () => {
+  if (textBox.value.length > MAX_CHARACTERS) {
+    textBox.value = textBox.value.slice(0, MAX_CHARACTERS);
+  }
+  updateCounter();
+});
+
+// Reset clears everything
+resetButton.addEventListener("click", () => {
+  textBox.value = "";
+  updateCounter();
+  textBox.focus();
+});
+
+updateCounter();
+
+HOW TO TEST IT (open q2.html in the browser)
+---------------------------------------------
+1. Type text: the counter goes down from 100 characters left.
+2. At 20 characters left the counter turns YELLOW.
+3. At 0 it turns RED. Keep typing: nothing is added (also Enter is blocked).
+4. Press Backspace: it works, the counter goes back to yellow (1 left).
+5. Paste a very long text: only the first 100 characters are inserted.
+6. Click Reset: the box is empty, the counter shows 100 and has no colour.
+
+EXPLANATION
+-----------
+event.preventDefault() on keydown cancels the browser's default action, which
+is "insert the character". Letters are recognised with event.key.length === 1.
+Yellow text on a white background is hard to read, so the counter is a
+coloured badge with dark text on yellow and white text on red.
+
+
+
+##########################################################################
+##  Q3.  MULTI-STEP FORM WITH NEXT/BACK & VALIDATION
+##  FILES: q3.html  +  q3.js
+##########################################################################
+
+PROBLEM
+-------
+Create a 3-step form: Step 1: Name, Step 2: Email, Step 3: Password.
+"Next" moves to next step only if input is valid. "Back" moves to previous.
+When all 3 steps complete -> show summary.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Three .step blocks; only the one with the class "active" is displayed.
+  currentStep (0, 1, 2) remembers where the user is.
+* One validator function per step returns an error message, or "" when the
+  value is valid:
+      name     - required, letters/spaces only, at least 2 characters
+      email    - required, valid format (name@example.com)
+      password - at least 6 characters with a letter and a number
+* Next is the submit button of the form, so pressing Enter works too. If the
+  validator returns an error, the error is shown and the step does not change.
+* Back goes to the previous step; the typed values stay in the inputs.
+* A progress bar shows the steps (current = blue, completed = green).
+* After step 3 a summary is shown. The password is never displayed, only as
+  dots, and "Start again" resets everything.
+
+CODE - FILE 1 of 2:  q3.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Step Form</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; display: flex; justify-content: center; padding: 30px; }
+    .card { background: #fff; padding: 25px 30px; border-radius: 8px; width: 380px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    h2 { text-align: center; margin-top: 0; }
+    .progress { display: flex; justify-content: space-between; margin-bottom: 22px; }
+    .progress-step { flex: 1; text-align: center; font-size: 13px; padding: 6px 0; border-bottom: 4px solid #d0d5db; color: #777; }
+    .progress-step.active { border-color: #2d6cdf; color: #2d6cdf; font-weight: bold; }
+    .progress-step.done { border-color: #2e9e5b; color: #2e9e5b; }
+    .step { display: none; }
+    .step.active { display: block; }
+    label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 6px; }
+    input { width: 100%; padding: 9px; border: 2px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 15px; }
+    input.invalid { border-color: #d64545; }
+    .error { color: #d64545; font-size: 12px; min-height: 16px; margin-top: 4px; }
+    .buttons { display: flex; justify-content: space-between; margin-top: 18px; }
+    button { padding: 9px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; color: #fff; }
+    #backButton { background: #777; }
+    #nextButton { background: #2d6cdf; }
+    #backButton[hidden] { display: none; }
+    #summary dl { margin: 0; }
+    #summary dt { font-weight: bold; margin-top: 12px; color: #555; }
+    #summary dd { margin: 4px 0 0; }
+    #restartButton { background: #2e9e5b; margin-top: 20px; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Sign-up</h2>
+    <div class="progress" id="progress">
+      <div class="progress-step">1. Name</div>
+      <div class="progress-step">2. Email</div>
+      <div class="progress-step">3. Password</div>
+    </div>
+
+    <form id="multiStepForm" novalidate>
+      <div class="step">
+        <label for="nameInput">Full name</label>
+        <input type="text" id="nameInput" autocomplete="name" placeholder="e.g. Ansh Shukla">
+        <div class="error"></div>
+      </div>
+      <div class="step">
+        <label for="emailInput">Email</label>
+        <input type="text" id="emailInput" autocomplete="email" placeholder="name@example.com">
+        <div class="error"></div>
+      </div>
+      <div class="step">
+        <label for="passwordInput">Password</label>
+        <input type="password" id="passwordInput" autocomplete="new-password" placeholder="Min 6 characters, letter + number">
+        <div class="error"></div>
+      </div>
+      <div class="buttons">
+        <button type="button" id="backButton">Back</button>
+        <button type="submit" id="nextButton">Next</button>
+      </div>
+    </form>
+
+    <div id="summary" hidden>
+      <h3>Summary</h3>
+      <dl>
+        <dt>Name</dt><dd id="summaryName"></dd>
+        <dt>Email</dt><dd id="summaryEmail"></dd>
+        <dt>Password</dt><dd id="summaryPassword"></dd>
+      </dl>
+      <button type="button" id="restartButton">Start again</button>
+    </div>
+  </div>
+  <script src="q3.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q3.js  (the JavaScript of this question)
+------------------------------------------------------------
+"use strict";
+
+const form = document.getElementById("multiStepForm");
+const steps = Array.from(document.querySelectorAll(".step"));
+const progressSteps = Array.from(document.querySelectorAll(".progress-step"));
+const backButton = document.getElementById("backButton");
+const nextButton = document.getElementById("nextButton");
+const summaryBox = document.getElementById("summary");
+
+const nameInput = document.getElementById("nameInput");
+const emailInput = document.getElementById("emailInput");
+const passwordInput = document.getElementById("passwordInput");
+
+let currentStep = 0; // index of the visible step (0, 1 or 2)
+
+// ---------- Validators: return an error message, or "" when the value is valid ----------
+const validators = [
+  () => {
+    const name = nameInput.value.trim();
+    if (name === "") return "Name is required.";
+    if (!/^[A-Za-z][A-Za-z .'-]{1,49}$/.test(name)) return "Enter a valid name (letters only, at least 2 characters).";
+    return "";
+  },
+  () => {
+    const email = emailInput.value.trim();
+    if (email === "") return "Email is required.";
+    if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)) return "Enter a valid email (name@example.com).";
+    return "";
+  },
+  () => {
+    const password = passwordInput.value;
+    if (password === "") return "Password is required.";
+    if (password.length < 6) return "Password must be at least 6 characters.";
+    if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) return "Password must contain a letter and a number.";
+    return "";
+  }
+];
+
+// Shows or clears the inline error of one step
+function showError(stepIndex, message) {
+  const input = steps[stepIndex].querySelector("input");
+  steps[stepIndex].querySelector(".error").textContent = message;
+  input.classList.toggle("invalid", message !== "");
+}
+
+// Shows only the current step and updates the buttons and the progress bar
+function showStep(stepIndex) {
+  currentStep = stepIndex;
+  steps.forEach((step, index) => step.classList.toggle("active", index === currentStep));
+  progressSteps.forEach((item, index) => {
+    item.classList.toggle("active", index === currentStep);
+    item.classList.toggle("done", index < currentStep);
+  });
+  backButton.hidden = currentStep === 0;
+  nextButton.textContent = currentStep === steps.length - 1 ? "Finish" : "Next";
+  steps[currentStep].querySelector("input").focus();
+}
+
+function showSummary() {
+  document.getElementById("summaryName").textContent = nameInput.value.trim();
+  document.getElementById("summaryEmail").textContent = emailInput.value.trim();
+  // The real password is never displayed, only its length
+  document.getElementById("summaryPassword").textContent = "•".repeat(passwordInput.value.length);
+  form.hidden = true;
+  document.getElementById("progress").hidden = true;
+  summaryBox.hidden = false;
+}
+
+// "Next" is the submit button, so pressing Enter also works.
+form.addEventListener("submit", event => {
+  event.preventDefault();
+
+  const errorMessage = validators[currentStep]();
+  showError(currentStep, errorMessage);
+  if (errorMessage !== "") return; // stay on this step until the input is valid
+
+  if (currentStep < steps.length - 1) {
+    showStep(currentStep + 1);
+  } else {
+    showSummary(); // all 3 steps are complete
+  }
+});
+
+backButton.addEventListener("click", () => {
+  if (currentStep > 0) showStep(currentStep - 1); // the typed values are kept
+});
+
+// The error disappears as soon as the user starts correcting the value
+steps.forEach((step, index) => {
+  step.querySelector("input").addEventListener("input", () => showError(index, ""));
+});
+
+document.getElementById("restartButton").addEventListener("click", () => {
+  form.reset();
+  summaryBox.hidden = true;
+  form.hidden = false;
+  document.getElementById("progress").hidden = false;
+  steps.forEach((_, index) => showError(index, ""));
+  showStep(0);
+});
+
+showStep(0);
+
+HOW TO TEST IT (open q3.html in the browser)
+---------------------------------------------
+1. Click Next with an empty name: the error "Name is required." appears.
+2. Type one letter: still invalid. Type "Ansh Shukla" and press Enter: step 2.
+3. Click Back: the name is still there. Go forward again.
+4. Email "bad-email" is blocked; "ansh@example.com" is accepted.
+5. Password "abc" (too short) and "abcdef" (no number) are blocked;
+   "abc123" is accepted and the button text is "Finish".
+6. The summary shows name, email and the password as dots. Start again resets.
+
+EXPLANATION
+-----------
+form.hidden and classList.toggle("active", ...) control what is visible.
+Because the form uses novalidate and the submit event with preventDefault(),
+the page never reloads, and our own error messages are shown instead of the
+browser's default tooltips.
+
+
+
+##########################################################################
+##  Q4.  THEME SWITCHER USING ATTRIBUTE MANIPULATION
+##  FILES: q4.html  +  q4.js
+##########################################################################
+
+PROBLEM
+-------
+Build a theme switcher with 3 themes: Light, Dark, Blue.
+ * Clicking a button adds a class to <body>
+ * All themes must be applied using setAttribute()
+ * Save current theme in a custom attribute: data-theme="dark" 
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* The CSS defines three classes (theme-light, theme-dark, theme-blue). Each
+  class only changes four CSS variables (background, text, card, accent), and
+  the whole page uses those variables.
+* applyTheme() does everything with setAttribute():
+      body.setAttribute("class", "theme-dark")   -> applies the theme
+      body.setAttribute("data-theme", "dark")    -> custom attribute that
+                                                    stores the current theme
+      button.setAttribute("aria-pressed", ...)   -> marks the active button
+* The page also prints the values read back with getAttribute(), so the
+  custom attribute can be seen working.
+* Extra: the chosen theme is saved in localStorage (inside try/catch, because
+  storage can be blocked) and restored after a refresh.
+
+CODE - FILE 1 of 2:  q4.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Theme Switcher</title>
+  <style>
+    /* Every theme only changes these four CSS variables */
+    :root, body.theme-light { --bg: #f5f7fa; --text: #1f2933; --card: #ffffff; --accent: #2d6cdf; }
+    body.theme-dark         { --bg: #14171c; --text: #e6e9ee; --card: #1f242c; --accent: #7aa7ff; }
+    body.theme-blue         { --bg: #dbeafe; --text: #0b2a5b; --card: #eff6ff; --accent: #1d4ed8; }
+
+    body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 40px 20px; transition: background 0.3s, color 0.3s; }
+    .card { background: var(--card); padding: 28px 32px; border-radius: 10px; width: 420px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    h2 { margin-top: 0; color: var(--accent); }
+    .theme-buttons { display: flex; gap: 10px; margin: 18px 0; }
+    .theme-buttons button { flex: 1; padding: 10px; border: 2px solid var(--accent); border-radius: 6px; background: transparent; color: var(--text); cursor: pointer; font-size: 14px; }
+    .theme-buttons button[aria-pressed="true"] { background: var(--accent); color: var(--card); font-weight: bold; }
+    code { background: rgba(127,127,127,0.2); padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Theme Switcher</h2>
+    <p>Choose a theme. The page colours change when the <code>class</code> of the body changes.</p>
+    <div class="theme-buttons">
+      <button type="button" data-theme-choice="light">Light</button>
+      <button type="button" data-theme-choice="dark">Dark</button>
+      <button type="button" data-theme-choice="blue">Blue</button>
+    </div>
+    <p>Current theme (read from <code>data-theme</code>): <strong id="currentTheme"></strong></p>
+    <p>Body class: <strong id="currentClass"></strong></p>
+  </div>
+  <script src="q4.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q4.js  (the JavaScript of this question)
+------------------------------------------------------------
+"use strict";
+
+const themeButtons = document.querySelectorAll("[data-theme-choice]");
+const currentThemeLabel = document.getElementById("currentTheme");
+const currentClassLabel = document.getElementById("currentClass");
+const STORAGE_KEY = "selectedTheme";
+
+// Applies a theme. EVERYTHING is done with setAttribute():
+//   1. the class of <body>        -> body.theme-dark  (CSS reads this class)
+//   2. the custom attribute       -> data-theme="dark" (saves the current theme)
+//   3. the pressed state of the buttons (aria-pressed)
+function applyTheme(themeName) {
+  document.body.setAttribute("class", `theme-${themeName}`);
+  document.body.setAttribute("data-theme", themeName);
+
+  themeButtons.forEach(button => {
+    const isSelected = button.getAttribute("data-theme-choice") === themeName;
+    button.setAttribute("aria-pressed", String(isSelected));
+  });
+
+  // The labels read the values BACK from the attributes
+  currentThemeLabel.textContent = document.body.getAttribute("data-theme");
+  currentClassLabel.textContent = document.body.getAttribute("class");
+}
+
+themeButtons.forEach(button => {
+  button.addEventListener("click", () => {
+    const themeName = button.getAttribute("data-theme-choice");
+    applyTheme(themeName);
+    try {
+      localStorage.setItem(STORAGE_KEY, themeName); // remember the choice after refresh
+    } catch (error) {
+      // storage can be blocked (private mode); the theme still works
+    }
+  });
+});
+
+// Start with the saved theme (if any), otherwise Light
+let startTheme = "light";
+try {
+  const savedTheme = localStorage.getItem(STORAGE_KEY);
+  if (["light", "dark", "blue"].includes(savedTheme)) startTheme = savedTheme;
+} catch (error) {
+  // ignore
+}
+applyTheme(startTheme);
+
+HOW TO TEST IT (open q4.html in the browser)
+---------------------------------------------
+1. Click Dark: the page turns dark. Click Blue: blue theme. Click Light.
+2. The text "Current theme" shows the value of data-theme and "Body class"
+   shows the class.
+3. Right-click the page -> Inspect: the <body> shows
+   class="theme-dark" data-theme="dark".
+4. Refresh the page: the last chosen theme is still active.
+
+EXPLANATION
+-----------
+setAttribute("class", ...) replaces the whole class attribute, which is fine
+because <body> has no other classes. data-* attributes are the standard way to
+store custom data on an element; they can also be used in CSS selectors such
+as body[data-theme="dark"].
+
+
+
+##########################################################################
+##  Q5.  IMAGE GALLERY WITH MODAL PREVIEW
+##  FILES: q5.html  +  q5.js
+##########################################################################
+
+PROBLEM
+-------
+Create an image grid (6 images). On clicking any image:
+ * Show a modal popup
+ * Modal displays a bigger version of clicked image
+ * Clicking outside modal -> closes the modal
+ * Use event.stopPropagation() so clicking inside modal does not close it
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* The 6 images are created from an array. The grid shows small versions
+  (400x300) and the modal loads a BIGGER version (1000x700) of the same photo.
+* One delegated click listener on the grid opens the modal for any image.
+* The modal has two layers: the dark full-screen overlay (the "outside") and
+  the white box inside it (the "inside").
+* Close rule:
+      overlay click listener      -> closeModal()
+      modal-box click listener    -> event.stopPropagation()
+  A click inside the box would bubble up to the overlay and close the modal.
+  stopPropagation() stops the click at the box, so it never reaches the
+  overlay.
+* Extras: close button (x) and the Esc key.
+* If an internet photo fails to load, a coloured placeholder is shown.
+
+CODE - FILE 1 of 2:  q5.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Gallery with Modal Preview</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; margin: 0; padding: 30px 20px; }
+    h2 { text-align: center; margin-top: 0; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; max-width: 760px; margin: 0 auto; }
+    .gallery img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; cursor: pointer; box-shadow: 0 1px 6px rgba(0,0,0,0.25); transition: transform 0.15s; }
+    .gallery img:hover { transform: scale(1.03); }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center; z-index: 10; padding: 20px; }
+    .modal-overlay[hidden] { display: none; }
+    .modal-content { position: relative; background: #fff; padding: 14px; border-radius: 10px; max-width: 92vw; max-height: 92vh; text-align: center; }
+    .modal-content img { display: block; max-width: 100%; max-height: 70vh; border-radius: 6px; margin: 0 auto; }
+    .modal-content p { margin: 10px 0 0; font-weight: bold; }
+    #closeButton { position: absolute; top: -14px; right: -14px; width: 32px; height: 32px; border: none; border-radius: 50%; background: #d64545; color: #fff; font-size: 18px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>Image Gallery</h2>
+  <div class="gallery" id="gallery"></div>
+
+  <!-- Modal: the dark overlay is the "outside", .modal-content is the "inside" -->
+  <div class="modal-overlay" id="modalOverlay" hidden>
+    <div class="modal-content" id="modalContent">
+      <button type="button" id="closeButton" aria-label="Close">&times;</button>
+      <img id="modalImage" alt="">
+      <p id="modalCaption"></p>
+    </div>
+  </div>
+  <script src="q5.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q5.js  (the JavaScript of this question)
+------------------------------------------------------------
+"use strict";
+
+// 6 images. Thumbnails use a small size, the modal asks for a BIGGER version
+// of the same photo. Replace the ids / URLs with your own images if you like.
+const photoIds = [10, 20, 30, 40, 50, 60];
+const images = photoIds.map((id, index) => ({
+  caption: `Photo ${index + 1}`,
+  thumbnail: `https://picsum.photos/id/${id}/400/300`,
+  large: `https://picsum.photos/id/${id}/1000/700`
+}));
+
+const gallery = document.getElementById("gallery");
+const modalOverlay = document.getElementById("modalOverlay");
+const modalContent = document.getElementById("modalContent");
+const modalImage = document.getElementById("modalImage");
+const modalCaption = document.getElementById("modalCaption");
+const closeButton = document.getElementById("closeButton");
+
+// If the internet image cannot load (offline), a coloured placeholder is shown
+// instead, so the gallery always works.
+function placeholderImage(label, width, height) {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+    `<rect width="100%" height="100%" fill="#5b7db1"/>` +
+    `<text x="50%" y="50%" fill="#fff" font-size="${Math.round(height / 7)}" font-family="Arial" ` +
+    `text-anchor="middle" dominant-baseline="middle">${label}</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function setImageSource(imageElement, url, label, width, height) {
+  imageElement.onerror = () => {
+    imageElement.onerror = null; // avoid an endless error loop
+    imageElement.src = placeholderImage(label, width, height);
+  };
+  imageElement.src = url;
+}
+
+// ---------- Build the grid of 6 images ----------
+images.forEach((imageData, index) => {
+  const thumbnail = document.createElement("img");
+  thumbnail.alt = imageData.caption;
+  thumbnail.dataset.index = index;
+  setImageSource(thumbnail, imageData.thumbnail, imageData.caption, 400, 300);
+  gallery.appendChild(thumbnail);
+});
+
+function openModal(index) {
+  const imageData = images[index];
+  modalImage.alt = imageData.caption;
+  setImageSource(modalImage, imageData.large, imageData.caption, 1000, 700);
+  modalCaption.textContent = imageData.caption;
+  modalOverlay.hidden = false;
+}
+
+function closeModal() {
+  modalOverlay.hidden = true;
+  modalImage.removeAttribute("src");
+}
+
+// Event delegation: one listener on the grid handles clicks on all images
+gallery.addEventListener("click", event => {
+  const clickedImage = event.target.closest("img");
+  if (clickedImage) openModal(Number(clickedImage.dataset.index));
+});
+
+// Click on the dark area (outside the modal box) closes the modal
+modalOverlay.addEventListener("click", closeModal);
+
+// Click INSIDE the modal box: stopPropagation() stops the event from
+// bubbling up to modalOverlay, so the overlay's close handler never runs.
+modalContent.addEventListener("click", event => {
+  event.stopPropagation();
+});
+
+// The close button is inside the box, so it closes the modal itself
+closeButton.addEventListener("click", closeModal);
+
+// Extra: the Esc key closes the modal
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !modalOverlay.hidden) closeModal();
+});
+
+HOW TO TEST IT (open q5.html in the browser)
+---------------------------------------------
+1. Six photos are shown in a grid. Click any photo: a modal opens with a
+   bigger version and its caption.
+2. Click on the picture or the caption inside the modal: it stays open.
+3. Click on the dark area outside the white box: it closes.
+4. Also try the x button and the Esc key.
+
+EXPLANATION
+-----------
+Events bubble from the clicked element up through its parents. Without
+stopPropagation(), the click on the picture inside the modal would bubble to
+the overlay, whose handler would close the modal. The x button is inside the
+box, so its own handler closes the modal explicitly.
+
+
+
+##########################################################################
+##  Q6.  REAL-TIME TABLE FILTER USING input EVENT
+##  FILES: q6.html  +  q6.js
+##########################################################################
+
+PROBLEM
+-------
+Given a table of students (Name, Branch, CGPA):
+ * When typing in a search box -> only matching rows remain visible
+ * Searching should be case-insensitive
+ * If no results found -> show "No results found" 
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* The table contains 8 students in the HTML. The "input" event of the search
+  box fires on every change (typing, deleting, pasting), so the filter updates
+  live without a button.
+* For each row: row text (name + branch + CGPA) in lower case includes the
+  search text in lower case. Using toLowerCase() on both sides makes the search
+  case-insensitive. An empty search matches every row.
+* Non-matching rows get the class "hidden-row" (display: none).
+* If no row is visible, a special last row with "No results found" is shown.
+  A counter also shows "Showing X of Y students".
+
+CODE - FILE 1 of 2:  q6.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Table Filter</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; display: flex; justify-content: center; padding: 30px; }
+    .card { background: #fff; padding: 25px 30px; border-radius: 8px; width: 520px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    h2 { text-align: center; margin-top: 0; }
+    #searchBox { width: 100%; padding: 10px; border: 2px solid #aaa; border-radius: 4px; box-sizing: border-box; font-size: 15px; }
+    #resultCount { font-size: 13px; color: #666; margin: 8px 0 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e3e6ea; }
+    th { background: #2d6cdf; color: #fff; }
+    tr.hidden-row { display: none; }
+    #noResults td { text-align: center; color: #d64545; font-weight: bold; padding: 20px; }
+    #noResults[hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Student Records</h2>
+    <input type="text" id="searchBox" placeholder="Search by name, branch or CGPA..." autocomplete="off">
+    <p id="resultCount"></p>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Branch</th><th>CGPA</th></tr>
+      </thead>
+      <tbody id="studentTableBody">
+        <tr><td>Ansh Shukla</td><td>Computer Science</td><td>8.6</td></tr>
+        <tr><td>Riya Sharma</td><td>Information Technology</td><td>9.1</td></tr>
+        <tr><td>Karan Verma</td><td>Mechanical</td><td>7.4</td></tr>
+        <tr><td>Meera Singh</td><td>Electronics</td><td>8.2</td></tr>
+        <tr><td>Aman Gupta</td><td>Computer Science</td><td>7.9</td></tr>
+        <tr><td>Neha Yadav</td><td>Civil</td><td>8.8</td></tr>
+        <tr><td>Rahul Mishra</td><td>Information Technology</td><td>6.9</td></tr>
+        <tr><td>Sara Khan</td><td>Electrical</td><td>9.4</td></tr>
+        <tr id="noResults" hidden><td colspan="3">No results found</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <script src="q6.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q6.js  (the JavaScript of this question)
+------------------------------------------------------------
+"use strict";
+
+const searchBox = document.getElementById("searchBox");
+const resultCount = document.getElementById("resultCount");
+const noResultsRow = document.getElementById("noResults");
+
+// All student rows (the "No results found" row is not a student)
+const studentRows = Array.from(document.querySelectorAll("#studentTableBody tr:not(#noResults)"));
+
+function filterTable() {
+  // toLowerCase() on BOTH sides makes the search case-insensitive
+  const searchText = searchBox.value.trim().toLowerCase();
+  let visibleCount = 0;
+
+  studentRows.forEach(row => {
+    const rowText = row.textContent.toLowerCase(); // Name + Branch + CGPA of this row
+    const isMatch = rowText.includes(searchText);  // empty search matches every row
+    row.classList.toggle("hidden-row", !isMatch);
+    if (isMatch) visibleCount++;
+  });
+
+  noResultsRow.hidden = visibleCount !== 0;        // show the message when nothing matches
+  resultCount.textContent = `Showing ${visibleCount} of ${studentRows.length} students`;
+}
+
+// The "input" event fires on every change: typing, deleting, pasting
+searchBox.addEventListener("input", filterTable);
+
+filterTable();
+
+HOW TO TEST IT (open q6.html in the browser)
+---------------------------------------------
+1. Type "comp": only the two Computer Science students stay.
+2. Type "COMP" or "RiYa": the search ignores upper/lower case.
+3. Type "9.1": the search also works on the CGPA column.
+4. Type "zzzz": all rows disappear and "No results found" is shown.
+5. Clear the box: all 8 students are back.
+
+EXPLANATION
+-----------
+Rows are hidden with a CSS class instead of being deleted, so they come back
+when the search text changes. The "No results" row is excluded from the list of
+student rows with the selector tr:not(#noResults).
+
+
+
+##########################################################################
+##  Q7.  DETECT MOUSE PATH & COORDINATES LOGGER
+##  FILES: q7.html  +  q7.js
+##########################################################################
+
+PROBLEM
+-------
+Create a box <div> (400x400). Track: mouse move inside the box, show live
+clientX, clientY, and on double-click inside, drop a red dot at the click
+position.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* A 400 x 400 box (with a 3px border) is the tracking area.
+* "mousemove" on the box shows clientX and clientY live. clientX/clientY are
+  measured from the top-left corner of the WINDOW, so the position INSIDE the
+  box is also shown (x, y from the box's own corner).
+* "dblclick" on the box creates a red dot. A dot must be placed relative to the
+  box, so the box's position (getBoundingClientRect) and its border
+  (clientLeft/clientTop) are subtracted from clientX/clientY.
+* The dot is position: absolute inside the box (position: relative), and
+  transform: translate(-50%, -50%) centres the dot on the exact click point.
+* Extras: "mouseleave" message, a dot counter and a "Clear dots" button.
+
+CODE - FILE 1 of 2:  q7.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mouse Path and Coordinates Logger</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; display: flex; flex-direction: column; align-items: center; padding: 30px 20px; }
+    h2 { margin-top: 0; }
+    #trackingBox { position: relative; width: 400px; height: 400px; background: #fff; border: 3px solid #2d6cdf; box-sizing: content-box; cursor: crosshair; overflow: hidden; user-select: none; }
+    .dot { position: absolute; width: 12px; height: 12px; background: red; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+    .info { width: 406px; margin-top: 14px; background: #fff; padding: 12px 16px; border-radius: 6px; box-shadow: 0 1px 5px rgba(0,0,0,0.15); line-height: 1.7; }
+    .info strong { margin-right: 6px; }
+    #clearButton { margin-top: 12px; padding: 8px 18px; border: none; border-radius: 4px; background: #555; color: #fff; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>Mouse Path &amp; Coordinates Logger</h2>
+  <div id="trackingBox"></div>
+  <div class="info">
+    <div><strong>Mouse position (clientX, clientY):</strong> <span id="clientCoords">move the mouse over the box</span></div>
+    <div><strong>Position inside the box:</strong> <span id="boxCoords">-</span></div>
+    <div><strong>Red dots (double-click):</strong> <span id="dotCount">0</span></div>
+  </div>
+  <button type="button" id="clearButton">Clear dots</button>
+  <script src="q7.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q7.js  (the JavaScript of this question)
+------------------------------------------------------------
+"use strict";
+
+const trackingBox = document.getElementById("trackingBox");
+const clientCoords = document.getElementById("clientCoords");
+const boxCoords = document.getElementById("boxCoords");
+const dotCount = document.getElementById("dotCount");
+const clearButton = document.getElementById("clearButton");
+
+// Converts a mouse event to a position INSIDE the box.
+// clientX / clientY are measured from the top-left corner of the WINDOW, but a
+// dot must be placed relative to the BOX, so the box's own position (and its
+// border) is subtracted.
+function getPositionInsideBox(event) {
+  const boxRectangle = trackingBox.getBoundingClientRect();
+  return {
+    x: Math.round(event.clientX - boxRectangle.left - trackingBox.clientLeft),
+    y: Math.round(event.clientY - boxRectangle.top - trackingBox.clientTop)
+  };
+}
+
+// Live coordinates while the mouse moves inside the box
+trackingBox.addEventListener("mousemove", event => {
+  const position = getPositionInsideBox(event);
+  clientCoords.textContent = `clientX: ${event.clientX}, clientY: ${event.clientY}`;
+  boxCoords.textContent = `x: ${position.x}, y: ${position.y}`;
+});
+
+trackingBox.addEventListener("mouseleave", () => {
+  clientCoords.textContent = "mouse is outside the box";
+  boxCoords.textContent = "-";
+});
+
+// Double-click inside the box drops a red dot exactly at the click position
+trackingBox.addEventListener("dblclick", event => {
+  const position = getPositionInsideBox(event);
+
+  const dot = document.createElement("div");
+  dot.className = "dot";
+  dot.style.left = `${position.x}px`; // the CSS translate(-50%, -50%) centres the dot on the point
+  dot.style.top = `${position.y}px`;
+  trackingBox.appendChild(dot);
+
+  dotCount.textContent = trackingBox.querySelectorAll(".dot").length;
+});
+
+clearButton.addEventListener("click", () => {
+  trackingBox.querySelectorAll(".dot").forEach(dot => dot.remove());
+  dotCount.textContent = "0";
+});
+
+HOW TO TEST IT (open q7.html in the browser)
+---------------------------------------------
+1. Move the mouse inside the box: clientX/clientY change live.
+2. Double-click anywhere in the box: a red dot appears exactly under the
+   pointer. Do it several times: the dot counter increases.
+3. Double-click outside the box: nothing is added.
+4. Move the mouse out of the box: the text changes to "outside the box".
+5. Click "Clear dots": all dots are removed.
+
+EXPLANATION
+-----------
+pointer-events: none on the dot lets later double-clicks pass through the dot
+to the box, so a new dot can be placed on top of an old one. user-select:
+none on the box prevents text selection while double-clicking.
+
+
+
+##########################################################################
+##  Q8.  CUSTOM DROPDOWN USING ONLY JAVASCRIPT (No <select> Tag)
+##  FILES: q8.html  +  q8.js
+##########################################################################
+
+PROBLEM
+-------
+Build a custom dropdown:
+ * A button shows/hides options
+ * Clicking an option updates the button text
+ * Clicking outside closes the dropdown
+ * Use capturing phase for the closing mechanism
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* The dropdown is a <button> plus a <ul> of <li> options (no <select>). The
+  list is shown or hidden with the hidden attribute.
+* Button click toggles the list. aria-expanded is updated for accessibility.
+* Option click (delegated on the <ul>) copies the option text to the button and
+  closes the list.
+* Closing by clicking outside uses the CAPTURING phase:
+      document.addEventListener("click", handler, { capture: true });
+  A click travels window -> document -> ... -> target (capturing) and then
+  back up (bubbling). A capturing listener on the document runs FIRST, so even
+  if another element calls stopPropagation(), the dropdown still closes. The
+  handler closes the list when the click target is not inside the dropdown.
+* Extra: Esc key closes the list.
+
+CODE - FILE 1 of 2:  q8.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Dropdown</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; display: flex; justify-content: center; padding: 50px 20px; }
+    .card { background: #fff; padding: 25px 30px; border-radius: 8px; width: 320px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    h2 { margin-top: 0; text-align: center; }
+    .dropdown { position: relative; }
+    #dropdownButton { width: 100%; padding: 11px 14px; text-align: left; background: #fff; border: 2px solid #2d6cdf; border-radius: 6px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; }
+    #dropdownButton::after { content: "\25BE"; }
+    #optionsList { position: absolute; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 0; list-style: none; background: #fff; border: 2px solid #2d6cdf; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 5; overflow: hidden; }
+    #optionsList[hidden] { display: none; }
+    #optionsList li { padding: 10px 14px; cursor: pointer; }
+    #optionsList li:hover { background: #e8f0fe; }
+    #optionsList li[aria-selected="true"] { background: #2d6cdf; color: #fff; }
+    #selectedValue { margin-top: 90px; text-align: center; color: #555; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Choose a course</h2>
+    <div class="dropdown" id="dropdown">
+      <button type="button" id="dropdownButton" aria-haspopup="listbox" aria-expanded="false">Select an option</button>
+      <ul id="optionsList" role="listbox" hidden>
+        <li role="option">B.Tech</li>
+        <li role="option">BCA</li>
+        <li role="option">MCA</li>
+        <li role="option">MBA</li>
+      </ul>
+    </div>
+    <p id="selectedValue">Nothing selected yet</p>
+  </div>
+  <script src="q8.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q8.js  (the JavaScript of this question)
+------------------------------------------------------------
+"use strict";
+
+const dropdown = document.getElementById("dropdown");
+const dropdownButton = document.getElementById("dropdownButton");
+const optionsList = document.getElementById("optionsList");
+const selectedValue = document.getElementById("selectedValue");
+
+function openDropdown() {
+  optionsList.hidden = false;
+  dropdownButton.setAttribute("aria-expanded", "true");
+}
+
+function closeDropdown() {
+  optionsList.hidden = true;
+  dropdownButton.setAttribute("aria-expanded", "false");
+}
+
+// The button shows or hides the options
+dropdownButton.addEventListener("click", () => {
+  if (optionsList.hidden) {
+    openDropdown();
+  } else {
+    closeDropdown();
+  }
+});
+
+// Clicking an option updates the button text and closes the list
+optionsList.addEventListener("click", event => {
+  const option = event.target.closest("li");
+  if (!option) return;
+
+  optionsList.querySelectorAll("li").forEach(item => item.removeAttribute("aria-selected"));
+  option.setAttribute("aria-selected", "true");
+
+  dropdownButton.textContent = option.textContent;
+  selectedValue.textContent = `You selected: ${option.textContent}`;
+  closeDropdown();
+});
+
+// ---------- CLOSING WITH THE CAPTURING PHASE ----------
+// The third argument { capture: true } registers the listener for the CAPTURING
+// phase. A click travels window -> document -> ... -> target (capturing) and
+// then back up (bubbling). A capturing listener on the document therefore runs
+// FIRST, before any other handler on the page. Even if some other element calls
+// event.stopPropagation() (which would stop a normal bubbling listener from
+// ever seeing the click), the dropdown still closes.
+document.addEventListener("click", event => {
+  const clickedInsideDropdown = dropdown.contains(event.target);
+  if (!clickedInsideDropdown && !optionsList.hidden) {
+    closeDropdown();
+  }
+}, { capture: true });
+
+// Extra: the Esc key closes the dropdown
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeDropdown();
+});
+
+HOW TO TEST IT (open q8.html in the browser)
+---------------------------------------------
+1. Click the button: the options appear. Click it again: they hide.
+2. Open it and click "MCA": the button now says MCA and the list closes.
+3. Open it and click on an empty part of the page: it closes.
+4. Open it and click inside the dropdown: it does not close by mistake.
+
+EXPLANATION
+-----------
+The third argument of addEventListener can be true or { capture: true }. In
+the capturing phase the handler sees the click before the target does, which
+makes the "click outside" rule reliable. The test run also proved this: with a
+bubbling handler on <body> that calls stopPropagation(), the dropdown still
+closed.
+
+
+
+##########################################################################
+##  Q9.  FORM SUBMIT BLOCKER WITH preventDefault() AND LIVE ERRORS
+##  FILES: q9.html  +  q9.js
+##########################################################################
+
+PROBLEM
+-------
+Build a form: Name (required), Email (required, must contain @), Password
+(min 6 chars). Requirements: on submit, if any field invalid -> show inline
+errors; use preventDefault() to stop form submission; on correcting input ->
+errors disappear automatically; show a final "Form Submitted Successfully"
+message.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* One rule per field returns an error message or "". Rules: name not empty;
+  email not empty and containing "@" with text before and after it; password
+  at least 6 characters.
+* The form uses novalidate, so the browser does not show its own tooltips and
+  our inline errors under each field are used.
+* submit listener: event.preventDefault() stops the real submission (no
+  reload). map() checks EVERY field (no early exit) so all errors show at once;
+  every() decides if the whole form is valid.
+* Live errors: while typing, a field that was already touched (left once, or
+  after a submit attempt) is re-checked on every keystroke, so its error
+  disappears automatically the moment the value becomes correct.
+* When the form is valid: "Form Submitted Successfully" is shown and the form
+  is cleared. The message hides again when the user starts typing.
+* After a failed submit, the first invalid field gets the focus.
+
+CODE - FILE 1 of 2:  q9.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Form Submit Blocker</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; display: flex; justify-content: center; padding: 30px; }
+    form { background: #fff; padding: 25px 30px; border-radius: 8px; width: 340px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    h2 { text-align: center; margin-top: 0; }
+    label { display: block; margin-top: 14px; font-weight: bold; font-size: 14px; }
+    input { width: 100%; padding: 9px; margin-top: 5px; border: 2px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 15px; }
+    input.invalid { border-color: #d64545; }
+    .error { color: #d64545; font-size: 12px; min-height: 16px; margin-top: 3px; }
+    button { margin-top: 18px; width: 100%; padding: 10px; background: #2d6cdf; color: #fff; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; }
+    #successMessage { margin-top: 14px; padding: 10px; background: #e6f4ea; color: #1e6b34; border-radius: 4px; text-align: center; font-weight: bold; }
+    #successMessage[hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <form id="signupForm" novalidate>
+    <h2>Registration</h2>
+
+    <label for="nameField">Name</label>
+    <input type="text" id="nameField" name="name" autocomplete="name">
+    <div class="error" id="nameError"></div>
+
+    <label for="emailField">Email</label>
+    <input type="text" id="emailField" name="email" autocomplete="email">
+    <div class="error" id="emailError"></div>
+
+    <label for="passwordField">Password</label>
+    <input type="password" id="passwordField" name="password" autocomplete="new-password">
+    <div class="error" id="passwordError"></div>
+
+    <button type="submit">Submit</button>
+    <div id="successMessage" hidden>Form Submitted Successfully</div>
+  </form>
+  <script src="q9.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q9.js  (the JavaScript of this question)
+------------------------------------------------------------
+"use strict";
+
+const form = document.getElementById("signupForm");
+const successMessage = document.getElementById("successMessage");
+
+// One rule per field: returns an error message, or "" when the value is valid
+const fields = [
+  {
+    input: document.getElementById("nameField"),
+    error: document.getElementById("nameError"),
+    validate: value => (value.trim() === "" ? "Name is required." : "")
+  },
+  {
+    input: document.getElementById("emailField"),
+    error: document.getElementById("emailError"),
+    validate: value => {
+      if (value.trim() === "") return "Email is required.";
+      // must contain "@" with some text before and after it
+      if (!/^[^\s@]+@[^\s@]+$/.test(value.trim())) return "Email must contain @ (example: name@mail.com).";
+      return "";
+    }
+  },
+  {
+    input: document.getElementById("passwordField"),
+    error: document.getElementById("passwordError"),
+    validate: value => (value.length < 6 ? "Password must be at least 6 characters." : "")
+  }
+];
+
+// Checks one field and shows or removes its inline error. Returns true if valid.
+function validateField(field) {
+  const message = field.validate(field.input.value);
+  field.error.textContent = message;
+  field.input.classList.toggle("invalid", message !== "");
+  return message === "";
+}
+
+// LIVE errors: while the user types, the field is checked again, so an error
+// disappears by itself as soon as the value becomes correct. Errors only
+// appear after the first submit attempt or after leaving the field once.
+const touchedFields = new Set();
+
+fields.forEach(field => {
+  field.input.addEventListener("blur", () => {
+    touchedFields.add(field);
+    validateField(field);
+  });
+
+  field.input.addEventListener("input", () => {
+    successMessage.hidden = true;           // the old success message is no longer true
+    if (touchedFields.has(field)) validateField(field);
+  });
+});
+
+form.addEventListener("submit", event => {
+  event.preventDefault(); // STOP the real form submission (no page reload)
+
+  fields.forEach(field => touchedFields.add(field));
+  const results = fields.map(validateField); // map() checks EVERY field, no early exit
+  const isFormValid = results.every(Boolean);
+
+  if (isFormValid) {
+    successMessage.hidden = false;
+    form.reset();                  // clear the fields for the next entry
+    touchedFields.clear();
+    fields.forEach(field => {
+      field.error.textContent = "";
+      field.input.classList.remove("invalid");
+    });
+  } else {
+    successMessage.hidden = true;
+    const firstInvalid = fields.find(field => field.input.classList.contains("invalid"));
+    if (firstInvalid) firstInvalid.input.focus();
+  }
+});
+
+HOW TO TEST IT (open q9.html in the browser)
+---------------------------------------------
+1. Click Submit with empty fields: three red inline errors appear.
+2. Type a name: the name error disappears at once.
+3. Type "abc" as email: the error mentions @. Type "ansh@mail.com": gone.
+4. Type "123" as password: error. Type "123456": gone.
+5. Click Submit: "Form Submitted Successfully" appears, the form is cleared.
+   The page does not reload (the address bar does not change).
+
+EXPLANATION
+-----------
+Without preventDefault() the browser would send the form and reload the page
+(a normal form submission), so the success message would never be seen. In a
+real application, the code that sends the data to a server would be added
+inside the valid branch.
+
+
+
+
+##########################################################################
+#                                                                        #
+#                        END OF ASSIGNMENT 7                             #
+#      Submitted by: Ansh Shukla  |  Roll No: 2415000257                 #
+#                    GLA University, Mathura                             #
+#                                                                        #
+##########################################################################
