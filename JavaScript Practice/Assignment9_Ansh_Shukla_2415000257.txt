@@ -1,0 +1,2251 @@
+##########################################################################
+#                                                                        #
+#                 JAVASCRIPT  -  ASSIGNMENT 9  (SOLUTIONS)               #
+#          jQuery | Selectors | Events | Effects | Traversal | DOM       #
+#                                                                        #
+##########################################################################
+
+  +--------------------------------------------------------------------+
+  |  STUDENT DETAILS                                                   |
+  +--------------------------------------------------------------------+
+  |  Name                : Ansh Shukla                                 |
+  |  University Roll No  : 2415000257                                  |
+  |  University          : GLA University, Mathura                     |
+  |  Course / Branch     : B.Tech - Computer Science & Engineering     |
+  |  Subject             : JavaScript (jQuery)                         |
+  |  Assignment          : Assignment 9                                |
+  |  Date of Submission  : 20 November 2026                            |
+  +--------------------------------------------------------------------+
+
+
+==========================================================================
+  TABLE OF CONTENTS
+==========================================================================
+
+   No.   Topic                                          Files
+  -----  ---------------------------------------------  ------------------
+   Q1    Welcome Page Greeting                          q1.html + q1.js
+   Q2    Product Highlight                              q2.html + q2.js
+   Q3    Interactive FAQ                                q3.html + q3.js
+   Q4    Special Offer Banner                           q4.html + q4.js
+   Q5    Team Members Directory (DOM traversal)         q5.html + q5.js
+   Q6    Event Subscription Panel (.on() / .off())      q6.html + q6.js
+   Q7    Search Courses (live search + highlight)       q7.html + q7.js
+   Q8    Dynamic Blog Posts (append/prepend/before)     q8.html + q8.js
+   Q9    Multi-jQuery Widgets (noConflict)              q9.html + q9.js
+   Q10   Registration Form Validation                   q10.html + q10.js
+
+
+==========================================================================
+  HOW TO RUN (VS CODE / BROWSER)
+==========================================================================
+
+   1. Every question has TWO files: qN.html (semantic HTML5 structure and
+      CSS) and qN.js (the jQuery code). The HTML loads jQuery from the
+      official CDN and then the question's own file, for example:
+          <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+          <script src="q1.js"></script>
+   2. Copy each CODE block below into a file with the name shown above the
+      block. Keep qN.html and qN.js in the SAME folder.
+   3. Open the .html file in a browser: double-click it, or right-click in
+      VS Code -> "Open with Live Server". jQuery works only in the browser
+      (it needs the DOM), so "node q1.js" will not work.
+   4. An INTERNET CONNECTION is needed, because jQuery is loaded from
+      code.jquery.com. (To work offline, download the same file and change
+      the src of the first <script> tag to the local file name.)
+   5. Q1-Q8 and Q10 use jQuery 3.6.0. Q9 loads TWO versions on purpose:
+      jQuery 1.10.2 and jQuery 3.6.0 (see Q9).
+   6. Each question has: Problem, Analysis, Code, How to test, Explanation.
+   7. Open the browser console with F12 to check for errors (there are none).
+
+
+==========================================================================
+  TESTING NOTE
+==========================================================================
+   All ten pages were opened in a real Chromium browser and operated by an
+   automated script (clicking, hovering, double-clicking, typing, pressing
+   keys, waiting for the 5-second banner rotation and the carousel). 103
+   checks were run and all passed, with no console errors. The test machine
+   had no internet access, so the same jQuery versions (3.6.0 and 1.10.2)
+   were served from local copies. The submitted HTML points to the official
+   CDN addresses of those exact versions.
+
+
+
+##########################################################################
+##  Q1.  WELCOME PAGE GREETING
+##  FILES: q1.html  +  q1.js
+##########################################################################
+
+PROBLEM
+-------
+Create a welcome page. 1) Greet the visitor on page load according to the
+time of day (Morning / Afternoon / Evening). 2) A "Change Greeting" button
+replaces the greeting with a motivational quote. 3) Another button shows or
+hides a welcome message. 4) Clicking the greeting shows an alert.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Hour of the day: before 12 = Morning, 12 to 16 = Afternoon, 17 onwards =
+  Evening. The greeting is built inside $(function () {...}), so it runs when
+  the DOM is ready.
+* Extra: an optional name field adds ", <name>!" to the greeting while typing
+  (keyup). Typing does not overwrite a quote that is on the screen.
+* Change Greeting cycles through 5 quotes (fadeOut, new text, fadeIn). A Reset
+  button brings the time-based greeting back.
+* Toggle: .toggle() shows/hides the welcome message and the button text is
+  updated ("Hide Welcome Message" / "Show Welcome Message").
+* Clicking the greeting calls alert() with the current text.
+
+CODE - FILE 1 of 2:  q1.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome Page Greeting</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f2f4f8; color: #222; margin: 0; }
+    header, footer { background: #2d6cdf; color: #fff; text-align: center; padding: 14px; }
+    header h1 { margin: 0; font-size: 22px; }
+    footer { font-size: 13px; }
+    footer p { margin: 0; }
+    main { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+    section { background: #fff; border-radius: 8px; padding: 18px 22px; margin-bottom: 18px; box-shadow: 0 1px 6px rgba(0,0,0,0.15); }
+    h2 { margin-top: 0; }
+    button { padding: 8px 14px; border: none; border-radius: 4px; background: #2d6cdf; color: #fff; cursor: pointer; font-size: 14px; }
+    button:hover { background: #1f55b8; }
+    button:disabled { background: #aab4c5; cursor: not-allowed; }
+    input[type="text"], input[type="email"], input[type="password"], select { padding: 8px; border: 2px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    #greeting { font-size: 28px; color: #2d6cdf; cursor: pointer; margin-bottom: 14px; }
+    #greeting:hover { text-decoration: underline; }
+    #welcomeMessage { background: #e8f0fe; border-left: 5px solid #2d6cdf; padding: 12px 16px; border-radius: 4px; }
+    #welcomeMessage h3 { margin-top: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Welcome Page</h1>
+  </header>
+
+  <main>
+    <section id="greetingSection" aria-label="Greeting">
+      <h2 id="greeting" title="Click the greeting"></h2>
+      <p>
+        <label for="visitorName">Your name:</label>
+        <input type="text" id="visitorName" placeholder="Enter your name" autocomplete="off">
+      </p>
+      <div class="buttons">
+        <button type="button" id="changeGreetingBtn">Change Greeting</button>
+        <button type="button" id="resetGreetingBtn">Reset Greeting</button>
+        <button type="button" id="toggleWelcomeBtn">Hide Welcome Message</button>
+      </div>
+    </section>
+
+    <section id="welcomeSection" aria-label="Welcome message">
+      <article id="welcomeMessage">
+        <h3>Welcome to our website!</h3>
+        <p>We are happy to see you here. Explore our pages, read our latest articles and enjoy your stay.</p>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Demo Website</p>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="q1.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q1.js  (the jQuery code of this question)
+------------------------------------------------------------
+// Runs when the DOM is ready (all elements exist and can be selected)
+$(document).ready(function () {
+
+  // 5 motivational quotes, used by the "Change Greeting" button
+  const quotes = [
+    "Small steps every day lead to big results.",
+    "Believe you can, and you are halfway there.",
+    "Do something today that your future self will thank you for.",
+    "Dream big, start small, act now.",
+    "Every expert was once a beginner."
+  ];
+  let quoteIndex = 0;
+
+  // Greeting based on the time of day: Morning / Afternoon / Evening
+  function getTimeGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
+  }
+
+  // Personalised greeting: adds the visitor's name when one is typed
+  function buildGreeting() {
+    const name = $.trim($("#visitorName").val());   // $.trim() removes extra spaces
+    return name ? getTimeGreeting() + ", " + name + "!" : getTimeGreeting() + "!";
+  }
+
+  // Scenario 1: greeting is shown on page load
+  function showGreeting() {
+    $("#greeting").stop(true, true).text(buildGreeting());
+    $("#greeting").data("isQuote", false);          // .data() stores a flag on the element
+  }
+  showGreeting();
+
+  // Typing a name updates the greeting (only while the time greeting is shown)
+  $("#visitorName").on("keyup", function () {
+    if (!$("#greeting").data("isQuote")) {
+      showGreeting();
+    }
+  });
+
+  // Scenario 2: "Change Greeting" replaces the text with a motivational quote
+  $("#changeGreetingBtn").on("click", function () {
+    const quote = quotes[quoteIndex];
+    quoteIndex = (quoteIndex + 1) % quotes.length;  // next click shows the next quote
+    $("#greeting")
+      .data("isQuote", true)
+      .stop(true, true)                             // finish any running animation first
+      .fadeOut(150, function () {                   // fade out, change text, fade in
+        $(this).text(quote).fadeIn(150);
+      });
+  });
+
+  // "Reset Greeting" brings the time-based greeting back
+  $("#resetGreetingBtn").on("click", showGreeting);
+
+  // Scenario 3: toggle the visibility of the welcome message with another button
+  $("#toggleWelcomeBtn").on("click", function () {
+    const $message = $("#welcomeMessage").toggle(); // toggle() shows it if hidden, hides it if shown
+    $(this).text($message.is(":visible") ? "Hide Welcome Message" : "Show Welcome Message");
+  });
+
+  // Scenario 4: clicking the greeting shows an alert
+  $("#greeting").on("click", function () {
+    alert('You clicked the greeting: "' + $(this).text() + '"');
+  });
+});
+
+HOW TO TEST IT (open q1.html in the browser)
+---------------------------------------------
+1. On load the heading says Good Morning / Afternoon / Evening, as per your
+   computer clock.
+2. Type a name: it appears in the greeting. Click "Change Greeting" a few
+   times: a different quote appears each time. Click Reset: greeting returns.
+3. Click "Hide Welcome Message": the message disappears. Click again: it shows.
+4. Click on the greeting text: an alert box shows what you clicked.
+
+EXPLANATION
+-----------
+$(function () {...}) is the short form of $(document).ready(). .text() sets
+the text safely (no HTML is parsed). .stop(true, true) before an animation
+prevents a queue of animations when the button is clicked fast. .data() keeps
+a small flag (isQuote) on the element, so the greeting knows what it shows.
+
+
+
+##########################################################################
+##  Q2.  PRODUCT HIGHLIGHT
+##  FILES: q2.html  +  q2.js
+##########################################################################
+
+PROBLEM
+-------
+Create a product list (at least 5 products). 1) Click a product to highlight
+its background. 2) Hovering shows additional product details. 3) Clicking a
+"Favorite" icon toggles a "selected" class. 4) Style discounted products
+differently using an attribute selector. 5) Alert if a product is out of stock
+(using a data attribute).
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* 6 products as <article class="product">. Discounted products carry
+  data-discount="20" and out-of-stock ones data-stock="0".
+* Attribute selectors: $(".product[data-discount]") finds discounted products
+  (green border, "-N% OFF" badge). $('.product[data-stock="0"]') finds out of
+  stock products (greyed, "Out of stock" label).
+* Click: if data-stock is 0 an alert says so; otherwise the product gets the
+  "highlighted" class (only one product is highlighted at a time).
+* Hover: .hover(in, out) with slideDown / slideUp shows the details block.
+* Favorite button: event.stopPropagation() is used so that clicking the heart
+  does NOT also highlight the product. It toggles the "selected" class, changes
+  the icon and updates the favourites counter.
+
+CODE - FILE 1 of 2:  q2.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Highlight</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f2f4f8; color: #222; margin: 0; }
+    header, footer { background: #2d6cdf; color: #fff; text-align: center; padding: 14px; }
+    header h1 { margin: 0; font-size: 22px; }
+    footer { font-size: 13px; }
+    footer p { margin: 0; }
+    main { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+    section { background: #fff; border-radius: 8px; padding: 18px 22px; margin-bottom: 18px; box-shadow: 0 1px 6px rgba(0,0,0,0.15); }
+    h2 { margin-top: 0; }
+    button { padding: 8px 14px; border: none; border-radius: 4px; background: #2d6cdf; color: #fff; cursor: pointer; font-size: 14px; }
+    button:hover { background: #1f55b8; }
+    button:disabled { background: #aab4c5; cursor: not-allowed; }
+    input[type="text"], input[type="email"], input[type="password"], select { padding: 8px; border: 2px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+    .product { position: relative; background: #fff; border: 2px solid #dde2ea; border-radius: 8px; padding: 14px; cursor: pointer; transition: background 0.2s; }
+    .product header { background: none; color: inherit; padding: 0; display: flex; justify-content: space-between; align-items: flex-start; text-align: left; }
+    .product h3 { margin: 0; font-size: 16px; }
+    .price { font-weight: bold; color: #1e6b34; margin: 10px 0 6px; }
+    .details { display: none; font-size: 13px; color: #555; margin-top: 8px; border-top: 1px dashed #ccc; padding-top: 8px; }
+    .fav { background: none; color: #999; font-size: 22px; padding: 0 4px; line-height: 1; }
+    .fav:hover { background: none; color: #d64545; }
+    .fav.selected { color: #d64545; }
+    .highlighted { background: #fff3bf; border-color: #f0b400; }
+    .has-discount { border-color: #2e9e5b; border-style: dashed; }
+    .badge { display: inline-block; background: #2e9e5b; color: #fff; font-size: 12px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+    .out-of-stock { opacity: 0.6; background: #f0f0f0; cursor: not-allowed; }
+    .stock-label { color: #d64545; font-weight: bold; margin: 6px 0 0; font-size: 13px; }
+    #favCount { margin: 0 0 12px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Online Store</h1>
+  </header>
+
+  <main>
+    <section aria-labelledby="productsTitle">
+      <h2 id="productsTitle">Our Products</h2>
+      <p>Click a product to highlight it, hover to see details, and use the heart to add favourites.</p>
+      <p id="favCount">Favourites: 0</p>
+
+      <!-- data-discount exists only on discounted products. data-stock="0" means out of stock. -->
+      <div class="grid" id="productGrid">
+        <article class="product" data-name="Wireless Headphones" data-discount="20" data-stock="12">
+          <header><h3>Wireless Headphones</h3><button type="button" class="fav" aria-pressed="false" aria-label="Add to favourites">&#9825;</button></header>
+          <p class="price">Rs. 2,999</p>
+          <div class="details">Bluetooth 5.0, 30 hour battery, noise isolation.</div>
+        </article>
+        <article class="product" data-name="Smart Watch" data-stock="0">
+          <header><h3>Smart Watch</h3><button type="button" class="fav" aria-pressed="false" aria-label="Add to favourites">&#9825;</button></header>
+          <p class="price">Rs. 4,999</p>
+          <div class="details">Heart-rate sensor, 7 day battery, water resistant.</div>
+        </article>
+        <article class="product" data-name="Laptop Backpack" data-discount="10" data-stock="25">
+          <header><h3>Laptop Backpack</h3><button type="button" class="fav" aria-pressed="false" aria-label="Add to favourites">&#9825;</button></header>
+          <p class="price">Rs. 1,499</p>
+          <div class="details">Fits 15.6 inch laptops, water-proof fabric, USB charging port.</div>
+        </article>
+        <article class="product" data-name="Bluetooth Speaker" data-stock="8">
+          <header><h3>Bluetooth Speaker</h3><button type="button" class="fav" aria-pressed="false" aria-label="Add to favourites">&#9825;</button></header>
+          <p class="price">Rs. 1,999</p>
+          <div class="details">360 degree sound, 12 hour playtime, splash proof.</div>
+        </article>
+        <article class="product" data-name="Gaming Mouse" data-discount="30" data-stock="0">
+          <header><h3>Gaming Mouse</h3><button type="button" class="fav" aria-pressed="false" aria-label="Add to favourites">&#9825;</button></header>
+          <p class="price">Rs. 899</p>
+          <div class="details">6 programmable buttons, 12000 DPI sensor, RGB lighting.</div>
+        </article>
+        <article class="product" data-name="Phone Case" data-stock="50">
+          <header><h3>Phone Case</h3><button type="button" class="fav" aria-pressed="false" aria-label="Add to favourites">&#9825;</button></header>
+          <p class="price">Rs. 299</p>
+          <div class="details">Shock-absorbing silicone, raised edges, slim fit.</div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Online Store</p>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="q2.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q2.js  (the jQuery code of this question)
+------------------------------------------------------------
+$(function () {
+  const $products = $(".product");
+
+  // ---------- Scenarios 4 and 5 use ATTRIBUTE SELECTORS ----------
+  // [data-discount]  -> matches every product that HAS this attribute (discounted products)
+  $(".product[data-discount]").each(function () {
+    const percent = $(this).attr("data-discount");       // read the attribute value
+    $(this)
+      .addClass("has-discount")                           // different style for discounted products
+      .find(".price")
+      .after($("<span>", { "class": "badge", text: "-" + percent + "% OFF" }));
+  });
+
+  // [data-stock="0"] -> matches products whose stock attribute is exactly 0
+  $('.product[data-stock="0"]')
+    .addClass("out-of-stock")
+    .append($("<p>", { "class": "stock-label", text: "Out of stock" }));
+
+  // Scenario 2: hover shows additional details (hover = mouseenter + mouseleave)
+  $products.hover(
+    function () { $(this).find(".details").stop(true, true).slideDown(150); },
+    function () { $(this).find(".details").stop(true, true).slideUp(150); }
+  );
+
+  // Scenarios 1 and 5: click highlights the product, or alerts if it is out of stock
+  $products.on("click", function () {
+    const $product = $(this);
+
+    if (Number($product.attr("data-stock")) === 0) {
+      alert('Sorry, "' + $product.attr("data-name") + '" is out of stock.');
+      return;                                             // out-of-stock products are not highlighted
+    }
+
+    const wasHighlighted = $product.hasClass("highlighted");
+    $products.removeClass("highlighted");                 // only one product is highlighted at a time
+    if (!wasHighlighted) {
+      $product.addClass("highlighted");                   // clicking the same product again removes it
+    }
+  });
+
+  // Scenario 3: the Favourite icon toggles the "selected" class
+  $(".fav").on("click", function (event) {
+    event.stopPropagation();                              // do not trigger the product's own click
+    const $icon = $(this).toggleClass("selected");        // adds the class if missing, removes it if present
+    const isSelected = $icon.hasClass("selected");
+    $icon.html(isSelected ? "&#9829;" : "&#9825;").attr("aria-pressed", String(isSelected));
+    $("#favCount").text("Favourites: " + $(".fav.selected").length);
+  });
+});
+
+HOW TO TEST IT (open q2.html in the browser)
+---------------------------------------------
+1. Click a product: its background turns yellow. Click another: it moves.
+2. Move the mouse over a product: extra details slide open; leave: they close.
+3. Click the heart on a product: it turns red/filled (class "selected"). The
+   product itself is not highlighted by this click. Click again: it resets.
+4. Headphones, Backpack and Gaming Mouse show a discount badge and colour.
+5. Click "Smart Watch" or "Gaming Mouse": an out of stock alert appears.
+
+EXPLANATION
+-----------
+stopPropagation() is the key detail: the heart is INSIDE the product, so a
+click on it would bubble up to the product's own click handler. Attribute
+selectors keep the logic in the HTML data, not in hard-coded product names.
+
+
+
+##########################################################################
+##  Q3.  INTERACTIVE FAQ
+##  FILES: q3.html  +  q3.js
+##########################################################################
+
+PROBLEM
+-------
+Create an FAQ with at least 5 questions. 1) Clicking a question toggles its
+answer. 2) Hover changes the question colour. 3) Double-click on a question
+collapses ALL answers. 4) Focus on an answer input highlights the parent
+question. 5) Blur resets the background colour.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* 5 .faq-item articles: h3.question, div.answer (hidden by CSS) and an
+  input.answer-input inside the answer.
+* Click: $(this).next(".answer").slideToggle() - the answer is the next
+  sibling of the question.
+* Hover: .hover() sets a new text colour and removes it again.
+* Double-click: $(".answer").slideUp() closes every answer.
+* Focus / blur on the input: .closest(".faq-item").find(".question") reaches
+  the parent question; .css("background-color", ...) highlights it on focus
+  and resets it (empty string) on blur.
+* Accessibility: questions have tabindex="0", so Enter or Space also toggles.
+
+CODE - FILE 1 of 2:  q3.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive FAQ</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f2f4f8; color: #222; margin: 0; }
+    header, footer { background: #2d6cdf; color: #fff; text-align: center; padding: 14px; }
+    header h1 { margin: 0; font-size: 22px; }
+    footer { font-size: 13px; }
+    footer p { margin: 0; }
+    main { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+    section { background: #fff; border-radius: 8px; padding: 18px 22px; margin-bottom: 18px; box-shadow: 0 1px 6px rgba(0,0,0,0.15); }
+    h2 { margin-top: 0; }
+    button { padding: 8px 14px; border: none; border-radius: 4px; background: #2d6cdf; color: #fff; cursor: pointer; font-size: 14px; }
+    button:hover { background: #1f55b8; }
+    button:disabled { background: #aab4c5; cursor: not-allowed; }
+    input[type="text"], input[type="email"], input[type="password"], select { padding: 8px; border: 2px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .faq-item { border: 1px solid #dde2ea; border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
+    .question { margin: 0; padding: 14px 16px; cursor: pointer; font-size: 17px; background: #fff; user-select: none; }
+    .answer { display: none; padding: 0 16px 14px; background: #fafbfd; }
+    .answer label { display: block; margin-top: 10px; font-size: 14px; }
+    .answer-input { width: 100%; margin-top: 6px; }
+    .hint { font-size: 13px; color: #666; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Frequently Asked Questions</h1>
+  </header>
+
+  <main>
+    <section aria-labelledby="faqTitle">
+      <h2 id="faqTitle">Help Centre</h2>
+      <p class="hint">Click a question to open or close its answer. Double-click a question to collapse all answers.</p>
+
+      <article class="faq-item">
+        <h3 class="question" tabindex="0">What is your return policy?</h3>
+        <div class="answer">
+          <p>You can return any product within 30 days of delivery if it is unused and in its original packaging.</p>
+          <label>Was this helpful? <input type="text" class="answer-input" placeholder="Type your feedback"></label>
+        </div>
+      </article>
+
+      <article class="faq-item">
+        <h3 class="question" tabindex="0">How long does delivery take?</h3>
+        <div class="answer">
+          <p>Standard delivery takes 3 to 5 working days. Express delivery takes 1 to 2 working days.</p>
+          <label>Was this helpful? <input type="text" class="answer-input" placeholder="Type your feedback"></label>
+        </div>
+      </article>
+
+      <article class="faq-item">
+        <h3 class="question" tabindex="0">Can I change my delivery address?</h3>
+        <div class="answer">
+          <p>Yes. You can change the address from your account page until the order has been shipped.</p>
+          <label>Was this helpful? <input type="text" class="answer-input" placeholder="Type your feedback"></label>
+        </div>
+      </article>
+
+      <article class="faq-item">
+        <h3 class="question" tabindex="0">Which payment methods do you accept?</h3>
+        <div class="answer">
+          <p>We accept credit cards, debit cards, UPI, net banking and cash on delivery.</p>
+          <label>Was this helpful? <input type="text" class="answer-input" placeholder="Type your feedback"></label>
+        </div>
+      </article>
+
+      <article class="faq-item">
+        <h3 class="question" tabindex="0">How can I contact customer support?</h3>
+        <div class="answer">
+          <p>Email support@example.com or call 1800-000-000 between 9 AM and 6 PM, Monday to Saturday.</p>
+          <label>Was this helpful? <input type="text" class="answer-input" placeholder="Type your feedback"></label>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Demo Support</p>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="q3.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q3.js  (the jQuery code of this question)
+------------------------------------------------------------
+$(function () {
+  const $questions = $(".question");
+
+  // Scenario 1: click a question -> toggle its answer
+  // .next(".answer") is the element right after the question
+  $questions.on("click", function () {
+    $(this).next(".answer").stop(true, true).slideToggle(200);
+  });
+
+  // Keyboard support: Enter or Space on a focused question works like a click
+  $questions.on("keydown", function (event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      $(this).trigger("click");
+    }
+  });
+
+  // Scenario 2: hover -> change the question colour (first function = mouse in, second = mouse out)
+  $questions.hover(
+    function () { $(this).css("color", "#d35400"); },
+    function () { $(this).css("color", ""); }         // "" removes the inline colour again
+  );
+
+  // Scenario 3: double-click a question -> collapse ALL answers
+  $questions.on("dblclick", function () {
+    $(".answer").stop(true, true).slideUp(200);
+  });
+
+  // Scenario 4: focus on an answer input -> highlight its parent question
+  // .closest(".faq-item") goes up to the FAQ item, .find(".question") goes back down to its question
+  $(".answer-input").on("focus", function () {
+    $(this).closest(".faq-item").find(".question").css("background-color", "#fff3bf");
+  });
+
+  // Scenario 5: blur (leaving the input) -> reset the background colour
+  $(".answer-input").on("blur", function () {
+    $(this).closest(".faq-item").find(".question").css("background-color", "");
+  });
+});
+
+HOW TO TEST IT (open q3.html in the browser)
+---------------------------------------------
+1. Click a question: its answer slides down. Click again: it hides.
+2. Move the mouse over a question: the colour changes to orange.
+3. Open several answers, then double-click any question: all of them close.
+4. Open an answer and click the input box: the question turns light yellow.
+5. Click outside the input: the yellow background disappears.
+
+EXPLANATION
+-----------
+Because the click and dblclick both fire on a double click, the first click
+toggles one answer and the dblclick then closes everything, which is the
+required behaviour. $(this) always means the element that raised the event.
+
+
+
+##########################################################################
+##  Q4.  SPECIAL OFFER BANNER
+##  FILES: q4.html  +  q4.js
+##########################################################################
+
+PROBLEM
+-------
+Show 5 offer banners. 1) Hide button. 2) Show button. 3) Slide Up / Slide
+Down buttons. 4) Fade In / Fade Out buttons. 5) Automatically rotate through
+banners every 5 seconds using fadeIn and fadeOut.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Part A (buttons): a dropdown chooses ALL banners or one banner (1-5); the
+  six buttons call .hide(), .show(), .slideUp(), .slideDown(), .fadeOut(),
+  .fadeIn() on the chosen banners.
+* Part B (rotator): 5 slides, only the first is visible at the start.
+  setInterval(showNextSlide, 5000) fades the current slide out (400 ms),
+  then fades the next slide in. The modulo operator wraps 5 back to 1.
+* Extra: the rotation pauses while the mouse is on the rotator and continues
+  when it leaves. A text indicator shows "Offer N of 5".
+
+CODE - FILE 1 of 2:  q4.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Special Offer Banner</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f2f4f8; color: #222; margin: 0; }
+    header, footer { background: #2d6cdf; color: #fff; text-align: center; padding: 14px; }
+    header h1 { margin: 0; font-size: 22px; }
+    footer { font-size: 13px; }
+    footer p { margin: 0; }
+    main { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+    section { background: #fff; border-radius: 8px; padding: 18px 22px; margin-bottom: 18px; box-shadow: 0 1px 6px rgba(0,0,0,0.15); }
+    h2 { margin-top: 0; }
+    button { padding: 8px 14px; border: none; border-radius: 4px; background: #2d6cdf; color: #fff; cursor: pointer; font-size: 14px; }
+    button:hover { background: #1f55b8; }
+    button:disabled { background: #aab4c5; cursor: not-allowed; }
+    input[type="text"], input[type="email"], input[type="password"], select { padding: 8px; border: 2px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .banner { color: #fff; padding: 16px 20px; border-radius: 6px; margin-top: 10px; }
+    .banner h3 { margin: 0 0 4px; }
+    .banner p { margin: 0; }
+    .b1 { background: #d64545; } .b2 { background: #2e9e5b; } .b3 { background: #e08a00; } .b4 { background: #6f42c1; } .b5 { background: #0d8aa8; }
+    #rotator { position: relative; min-height: 110px; }
+    .slide { display: none; color: #fff; padding: 24px; border-radius: 8px; text-align: center; }
+    .slide:first-child { display: block; }
+    .slide h3 { margin: 0 0 6px; font-size: 22px; }
+    .slide p { margin: 0; }
+    #slideIndicator { text-align: center; margin: 10px 0 0; font-size: 13px; color: #555; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Special Offers</h1>
+  </header>
+
+  <main>
+    <section aria-labelledby="controlsTitle">
+      <h2 id="controlsTitle">Banner Controls</h2>
+      <div class="controls">
+        <label for="bannerTarget">Banner:</label>
+        <select id="bannerTarget">
+          <option value="all">All banners</option>
+          <option value="1">Banner 1</option>
+          <option value="2">Banner 2</option>
+          <option value="3">Banner 3</option>
+          <option value="4">Banner 4</option>
+          <option value="5">Banner 5</option>
+        </select>
+        <button type="button" id="hideBtn">Hide</button>
+        <button type="button" id="showBtn">Show</button>
+        <button type="button" id="slideUpBtn">Slide Up</button>
+        <button type="button" id="slideDownBtn">Slide Down</button>
+        <button type="button" id="fadeOutBtn">Fade Out</button>
+        <button type="button" id="fadeInBtn">Fade In</button>
+      </div>
+
+      <div id="bannerArea">
+        <article class="banner b1" data-id="1"><h3>Banner 1: Flat 50% OFF</h3><p>On all winter clothing.</p></article>
+        <article class="banner b2" data-id="2"><h3>Banner 2: Free Delivery</h3><p>On orders above Rs. 499.</p></article>
+        <article class="banner b3" data-id="3"><h3>Banner 3: Buy 1 Get 1</h3><p>On selected footwear.</p></article>
+        <article class="banner b4" data-id="4"><h3>Banner 4: Cashback 10%</h3><p>Pay with UPI and save more.</p></article>
+        <article class="banner b5" data-id="5"><h3>Banner 5: New Arrivals</h3><p>Check out the latest collection.</p></article>
+      </div>
+    </section>
+
+    <section aria-labelledby="featuredTitle">
+      <h2 id="featuredTitle">Featured Offer (changes every 5 seconds)</h2>
+      <div id="rotator" aria-live="off">
+        <article class="slide b1"><h3>Mega Sale</h3><p>Up to 70% off on electronics</p></article>
+        <article class="slide b2"><h3>Fresh Groceries</h3><p>Free delivery in 30 minutes</p></article>
+        <article class="slide b3"><h3>Fashion Week</h3><p>Buy 2 get 1 free on all brands</p></article>
+        <article class="slide b4"><h3>Home Makeover</h3><p>Furniture starting at Rs. 999</p></article>
+        <article class="slide b5"><h3>Book Fest</h3><p>Flat 40% off on bestsellers</p></article>
+      </div>
+      <p id="slideIndicator">Offer 1 of 5</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Demo Store</p>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="q4.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q4.js  (the jQuery code of this question)
+------------------------------------------------------------
+$(function () {
+
+  // Returns the banner chosen in the drop-down: all banners, or one banner by its data-id
+  function getTargetBanners() {
+    const choice = $("#bannerTarget").val();
+    return choice === "all" ? $(".banner") : $('.banner[data-id="' + choice + '"]');
+  }
+
+  // Scenario 1: Hide  -> hides immediately (no animation)
+  $("#hideBtn").on("click", function () { getTargetBanners().hide(); });
+
+  // Scenario 2: Show  -> shows hidden banners again
+  $("#showBtn").on("click", function () { getTargetBanners().show(); });
+
+  // Scenario 3: Slide Up / Slide Down -> the height animates to 0 and back
+  $("#slideUpBtn").on("click", function () { getTargetBanners().slideUp(400); });
+  $("#slideDownBtn").on("click", function () { getTargetBanners().slideDown(400); });
+
+  // Scenario 4: Fade Out / Fade In -> opacity animates, so banners vanish and appear gradually
+  $("#fadeOutBtn").on("click", function () { getTargetBanners().fadeOut(600); });
+  $("#fadeInBtn").on("click", function () { getTargetBanners().fadeIn(600); });
+
+  // ---------- Scenario 5: automatic rotation every 5 seconds ----------
+  const $slides = $(".slide");
+  let currentSlide = 0;
+  let rotationTimer = null;
+
+  function showNextSlide() {
+    const $oldSlide = $slides.eq(currentSlide);
+    currentSlide = (currentSlide + 1) % $slides.length;        // after the last slide, go back to the first
+
+    // fade the old slide out, and in its callback fade the next one in
+    $oldSlide.fadeOut(400, function () {
+      $slides.eq(currentSlide).fadeIn(400);
+      $("#slideIndicator").text("Offer " + (currentSlide + 1) + " of " + $slides.length);
+    });
+  }
+
+  function startRotation() {
+    if (rotationTimer === null) {
+      rotationTimer = setInterval(showNextSlide, 5000);         // 5000 ms = 5 seconds
+    }
+  }
+
+  function stopRotation() {
+    clearInterval(rotationTimer);
+    rotationTimer = null;
+  }
+
+  // The rotation pauses while the mouse is over the offer, so it can be read calmly
+  $("#rotator").on("mouseenter", stopRotation).on("mouseleave", startRotation);
+
+  startRotation();
+});
+
+HOW TO TEST IT (open q4.html in the browser)
+---------------------------------------------
+1. Click Hide / Show: the banners disappear / appear instantly.
+2. Click Slide Up / Slide Down: they roll up / down.
+3. Click Fade Out / Fade In: they fade.
+4. Choose "Banner 3" in the dropdown and click Hide: only that one hides.
+5. Watch the rotator: the offer changes every 5 seconds (Offer 1 of 5 ->
+   Offer 2 of 5 ...). Hover it: rotation pauses.
+
+EXPLANATION
+-----------
+hide/show change display immediately; slide* animate the height; fade*
+animate the opacity. setInterval repeats; clearInterval stops it. Pausing on
+hover is a usability detail for users who want more time to read.
+
+
+
+##########################################################################
+##  Q5.  TEAM MEMBERS DIRECTORY (DOM TRAVERSAL)
+##  FILES: q5.html  +  q5.js
+##########################################################################
+
+PROBLEM
+-------
+A company directory with departments, managers and employees (at least 5
+items). 1) Click a manager to highlight direct reports. 2) Hover an employee
+to show contact info using .next(). 3) Click a department to change the
+background of all members using .children(). 4) Select a random employee to
+highlight siblings. 5) Collapse/expand a team using .parent() and .find().
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* 3 departments (Engineering, Marketing, Human Resources), each with
+  ul.members > li.employee. Managers have class "manager" and a data-id;
+  reports have data-manager="<id>" pointing to their manager.
+* 1: manager click -> $('.employee[data-manager="m1"]') gets "report-highlight".
+* 2: .children(".emp-name").next(".contact") - the contact paragraph is the
+  NEXT sibling of the name, shown with slideDown on hover.
+* 3: department name click -> .siblings(".members").children() are the <li>
+  members; .css() paints all of them. Clicking again clears it.
+* 4: random button picks $(".employee").eq(random) and highlights its
+  .siblings().
+* 5: the toggle button uses $(this).parent().find(".members").slideToggle().
+  .parent() goes up to the department, .find() goes down to the list.
+
+CODE - FILE 1 of 2:  q5.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Members Directory</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f2f4f8; color: #222; margin: 0; }
+    header, footer { background: #2d6cdf; color: #fff; text-align: center; padding: 14px; }
+    header h1 { margin: 0; font-size: 22px; }
+    footer { font-size: 13px; }
+    footer p { margin: 0; }
+    main { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+    section { background: #fff; border-radius: 8px; padding: 18px 22px; margin-bottom: 18px; box-shadow: 0 1px 6px rgba(0,0,0,0.15); }
+    h2 { margin-top: 0; }
+    button { padding: 8px 14px; border: none; border-radius: 4px; background: #2d6cdf; color: #fff; cursor: pointer; font-size: 14px; }
+    button:hover { background: #1f55b8; }
+    button:disabled { background: #aab4c5; cursor: not-allowed; }
+    input[type="text"], input[type="email"], input[type="password"], select { padding: 8px; border: 2px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    #status { margin: 10px 0 0; font-weight: bold; color: #2d6cdf; min-height: 20px; }
+    .department { background: #fff; border: 1px solid #dde2ea; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+    .department h2 { display: inline-block; margin: 0 12px 0 0; font-size: 19px; cursor: pointer; }
+    .department h2:hover { text-decoration: underline; }
+    .members { list-style: none; margin: 12px 0 0; padding: 0; }
+    .employee { padding: 10px 12px; border: 1px solid #e3e6ea; border-radius: 6px; margin-bottom: 6px; background: #fff; transition: background 0.2s; }
+    .employee.manager { border-left: 5px solid #2d6cdf; cursor: pointer; font-weight: bold; }
+    .emp-name { margin: 0; }
+    .role { font-weight: normal; color: #666; font-size: 13px; }
+    .contact { display: none; margin: 6px 0 0; font-size: 13px; font-weight: normal; color: #444; }
+    .report-highlight { background: #d4f4dd; }
+    .sibling-highlight { background: #ffe3b3; }
+    .employee.selected { background: #cfe0ff; border-color: #2d6cdf; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Team Members Directory</h1>
+  </header>
+
+  <main>
+    <section aria-labelledby="helpTitle">
+      <h2 id="helpTitle">How to use</h2>
+      <p>Click a <strong>manager</strong> to highlight the direct reports. Hover an employee for contact info. Click a <strong>department name</strong> to colour its members. Use the buttons to pick a random employee or collapse a team.</p>
+      <div class="toolbar">
+        <button type="button" id="randomBtn">Select Random Employee</button>
+      </div>
+      <p id="status" role="status"></p>
+    </section>
+
+    <section aria-label="Directory" id="directory">
+
+      <article class="department" data-color="#d6e4ff">
+        <h2 class="dept-name">Engineering</h2>
+        <button type="button" class="toggle-team" aria-expanded="true">Collapse team</button>
+        <ul class="members">
+          <li class="employee manager" data-id="m1"><p class="emp-name">Sara Khan <span class="role">(Engineering Manager)</span></p><p class="contact">sara.khan@example.com | Ext. 101</p></li>
+          <li class="employee" data-manager="m1"><p class="emp-name">Amit Verma <span class="role">(Developer)</span></p><p class="contact">amit.verma@example.com | Ext. 102</p></li>
+          <li class="employee" data-manager="m1"><p class="emp-name">Neha Yadav <span class="role">(Developer)</span></p><p class="contact">neha.yadav@example.com | Ext. 103</p></li>
+          <li class="employee" data-manager="m1"><p class="emp-name">Karan Singh <span class="role">(Tester)</span></p><p class="contact">karan.singh@example.com | Ext. 104</p></li>
+          <li class="employee" data-manager="m1"><p class="emp-name">Priya Nair <span class="role">(DevOps)</span></p><p class="contact">priya.nair@example.com | Ext. 105</p></li>
+        </ul>
+      </article>
+
+      <article class="department" data-color="#ffe0e0">
+        <h2 class="dept-name">Marketing</h2>
+        <button type="button" class="toggle-team" aria-expanded="true">Collapse team</button>
+        <ul class="members">
+          <li class="employee manager" data-id="m2"><p class="emp-name">Rahul Mishra <span class="role">(Marketing Manager)</span></p><p class="contact">rahul.mishra@example.com | Ext. 201</p></li>
+          <li class="employee" data-manager="m2"><p class="emp-name">Meera Singh <span class="role">(Content Writer)</span></p><p class="contact">meera.singh@example.com | Ext. 202</p></li>
+          <li class="employee" data-manager="m2"><p class="emp-name">Aman Gupta <span class="role">(SEO Analyst)</span></p><p class="contact">aman.gupta@example.com | Ext. 203</p></li>
+          <li class="employee" data-manager="m2"><p class="emp-name">Divya Rao <span class="role">(Designer)</span></p><p class="contact">divya.rao@example.com | Ext. 204</p></li>
+        </ul>
+      </article>
+
+      <article class="department" data-color="#e1f5e1">
+        <h2 class="dept-name">Human Resources</h2>
+        <button type="button" class="toggle-team" aria-expanded="true">Collapse team</button>
+        <ul class="members">
+          <li class="employee manager" data-id="m3"><p class="emp-name">Kavita Joshi <span class="role">(HR Manager)</span></p><p class="contact">kavita.joshi@example.com | Ext. 301</p></li>
+          <li class="employee" data-manager="m3"><p class="emp-name">Rohan Das <span class="role">(Recruiter)</span></p><p class="contact">rohan.das@example.com | Ext. 302</p></li>
+          <li class="employee" data-manager="m3"><p class="emp-name">Anjali Pal <span class="role">(Payroll)</span></p><p class="contact">anjali.pal@example.com | Ext. 303</p></li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Demo Company</p>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="q5.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q5.js  (the jQuery code of this question)
+------------------------------------------------------------
+$(function () {
+
+  // Scenario 1: click a manager -> highlight all DIRECT reports
+  // A report stores its manager's id in data-manager, so an attribute selector finds them.
+  $(".employee.manager").on("click", function () {
+    const managerId = $(this).attr("data-id");
+    $(".employee").removeClass("report-highlight selected sibling-highlight");
+
+    const $reports = $('.employee[data-manager="' + managerId + '"]').addClass("report-highlight");
+    $("#status").text($.trim($(this).find(".emp-name").clone().children().remove().end().text()) +
+      " has " + $reports.length + " direct reports");
+  });
+
+  // Scenario 2: hover an employee -> show contact info
+  // .next() returns the element directly AFTER the name paragraph, which is the contact paragraph.
+  $(".employee").hover(
+    function () { $(this).children(".emp-name").next(".contact").stop(true, true).slideDown(150); },
+    function () { $(this).children(".emp-name").next(".contact").stop(true, true).slideUp(150); }
+  );
+
+  // Scenario 3: click a department name -> change the background of ALL members of that department
+  // .siblings(".members") finds the list next to the heading, .children() returns its <li> members.
+  $(".dept-name").on("click", function () {
+    const $members = $(this).siblings(".members");
+    const color = $(this).closest(".department").attr("data-color");
+
+    if ($members.data("colored")) {                       // second click removes the colour again
+      $members.children().css("background-color", "");
+      $members.data("colored", false);
+    } else {
+      $members.children().css("background-color", color);
+      $members.data("colored", true);
+    }
+  });
+
+  // Scenario 4: select a random employee -> highlight his/her siblings (same department list)
+  $("#randomBtn").on("click", function () {
+    const $all = $(".employee");
+    $all.removeClass("report-highlight selected sibling-highlight");
+
+    const randomIndex = Math.floor(Math.random() * $all.length);
+    const $picked = $all.eq(randomIndex).addClass("selected");
+    const $siblings = $picked.siblings().addClass("sibling-highlight");   // .siblings() = the other <li> in the same <ul>
+
+    $("#status").text("Random pick: " + $.trim($picked.find(".emp-name").clone().children().remove().end().text()) +
+      " (" + $siblings.length + " siblings highlighted)");
+  });
+
+  // Scenario 5: collapse / expand a team
+  // .parent() goes from the button up to its department, .find(".members") goes down to the list.
+  $(".toggle-team").on("click", function () {
+    const $button = $(this);
+    const $team = $button.parent().find(".members");
+
+    $team.stop(true, true).slideToggle(250, function () {
+      const isOpen = $team.is(":visible");
+      $button.text(isOpen ? "Collapse team" : "Expand team").attr("aria-expanded", String(isOpen));
+    });
+  });
+});
+
+HOW TO TEST IT (open q5.html in the browser)
+---------------------------------------------
+1. Click the manager "Sara" in Engineering: her 4 reports are highlighted.
+2. Hover any employee: the contact line appears below the name.
+3. Click a department heading: every member of it gets the department colour.
+4. Click "Select Random Employee": one employee is marked, its siblings in
+   the same team are highlighted, and the status line names them.
+5. Click "Collapse team": the list hides and the button says "Expand team".
+
+EXPLANATION
+-----------
+Traversal methods: .next() = next sibling, .siblings() = all others at the
+same level, .children() = direct children only, .parent() = one level up,
+.find() = any depth down, .closest() = nearest ancestor. Using data attributes
+(data-manager) makes the relationship readable and easy to extend.
+
+
+
+##########################################################################
+##  Q6.  EVENT SUBSCRIPTION PANEL (.on() AND .off())
+##  FILES: q6.html  +  q6.js
+##########################################################################
+
+PROBLEM
+-------
+A panel with at least 5 topics. 1) Subscribe enables notifications.
+2) Unsubscribe disables them. 3) Dynamically add new topics and attach .on()
+click events. 4) Remove a subscription and detach events with .off().
+5) A success message is dynamically inserted into the DOM.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* 5 topics, each with Subscribe, Unsubscribe (disabled at the start) and
+  Remove buttons. A counter shows "Active notifications: N".
+* The three handlers are named functions (onSubscribe, onUnsubscribe,
+  onRemove). bindTopicEvents($topic) attaches them with .on("click", ...).
+  It is called for the existing topics AND for every topic added later,
+  because new elements do not have events automatically.
+* Add Topic form: empty names and duplicate names (case-insensitive) are
+  rejected with a message.
+* Remove: $topic.find("button").off("click") detaches the handlers, then the
+  item fades out and is removed from the DOM.
+* Messages: $("<p>", {...}) is created in memory, append()ed to #messages,
+  faded in, then faded out and remove()d after a few seconds.
+
+CODE - FILE 1 of 2:  q6.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Subscription Panel</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f2f4f8; color: #222; margin: 0; }
+    header, footer { background: #2d6cdf; color: #fff; text-align: center; padding: 14px; }
+    header h1 { margin: 0; font-size: 22px; }
+    footer { font-size: 13px; }
+    footer p { margin: 0; }
+    main { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+    section { background: #fff; border-radius: 8px; padding: 18px 22px; margin-bottom: 18px; box-shadow: 0 1px 6px rgba(0,0,0,0.15); }
+    h2 { margin-top: 0; }
+    button { padding: 8px 14px; border: none; border-radius: 4px; background: #2d6cdf; color: #fff; cursor: pointer; font-size: 14px; }
+    button:hover { background: #1f55b8; }
+    button:disabled { background: #aab4c5; cursor: not-allowed; }
+    input[type="text"], input[type="email"], input[type="password"], select { padding: 8px; border: 2px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    #topicList { list-style: none; margin: 14px 0 0; padding: 0; }
+    .topic { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid #dde2ea; border-radius: 6px; margin-bottom: 8px; background: #fff; }
+    .topic.subscribed { background: #e6f4ea; border-color: #2e9e5b; }
+    .topic-name { font-weight: bold; min-width: 140px; }
+    .status { font-size: 13px; color: #777; min-width: 130px; }
+    .topic.subscribed .status { color: #1e6b34; font-weight: bold; }
+    .actions { display: flex; gap: 6px; }
+    .unsubscribe { background: #e08a00; }
+    .remove { background: #d64545; }
+    #addTopicForm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 16px; }
+    #summary { font-weight: bold; margin: 0; }
+    #messages { min-height: 40px; margin-top: 10px; }
+    .success-message { background: #e6f4ea; color: #1e6b34; border-left: 5px solid #2e9e5b; padding: 10px 14px; border-radius: 4px; margin: 6px 0 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Event Subscription Panel</h1>
+  </header>
+
+  <main>
+    <section aria-labelledby="topicsTitle">
+      <h2 id="topicsTitle">Subscription Topics</h2>
+      <p id="summary">Active notifications: 0</p>
+
+      <ul id="topicList">
+        <li class="topic" data-topic="Tech News">
+          <span class="topic-name">Tech News</span>
+          <span class="status">Notifications OFF</span>
+          <span class="actions">
+            <button type="button" class="subscribe">Subscribe</button>
+            <button type="button" class="unsubscribe" disabled>Unsubscribe</button>
+            <button type="button" class="remove">Remove</button>
+          </span>
+        </li>
+        <li class="topic" data-topic="Sports Updates">
+          <span class="topic-name">Sports Updates</span>
+          <span class="status">Notifications OFF</span>
+          <span class="actions">
+            <button type="button" class="subscribe">Subscribe</button>
+            <button type="button" class="unsubscribe" disabled>Unsubscribe</button>
+            <button type="button" class="remove">Remove</button>
+          </span>
+        </li>
+        <li class="topic" data-topic="Music Events">
+          <span class="topic-name">Music Events</span>
+          <span class="status">Notifications OFF</span>
+          <span class="actions">
+            <button type="button" class="subscribe">Subscribe</button>
+            <button type="button" class="unsubscribe" disabled>Unsubscribe</button>
+            <button type="button" class="remove">Remove</button>
+          </span>
+        </li>
+        <li class="topic" data-topic="Workshops">
+          <span class="topic-name">Workshops</span>
+          <span class="status">Notifications OFF</span>
+          <span class="actions">
+            <button type="button" class="subscribe">Subscribe</button>
+            <button type="button" class="unsubscribe" disabled>Unsubscribe</button>
+            <button type="button" class="remove">Remove</button>
+          </span>
+        </li>
+        <li class="topic" data-topic="Movie Releases">
+          <span class="topic-name">Movie Releases</span>
+          <span class="status">Notifications OFF</span>
+          <span class="actions">
+            <button type="button" class="subscribe">Subscribe</button>
+            <button type="button" class="unsubscribe" disabled>Unsubscribe</button>
+            <button type="button" class="remove">Remove</button>
+          </span>
+        </li>
+      </ul>
+
+      <form id="addTopicForm">
+        <label for="newTopic">New topic:</label>
+        <input type="text" id="newTopic" placeholder="e.g. Health Tips" autocomplete="off">
+        <button type="submit">Add Topic</button>
+      </form>
+
+      <div id="messages" role="status" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Demo Events</p>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="q6.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q6.js  (the jQuery code of this question)
+------------------------------------------------------------
+$(function () {
+  const $topicList = $("#topicList");
+
+  // Scenario 5: a success message is CREATED with jQuery and inserted into the DOM, then removed
+  function showMessage(text) {
+    const $message = $("<p>", { "class": "success-message", text: text });
+    $("#messages").append($message);                       // dynamically inserted into the DOM
+    $message.hide().fadeIn(200).delay(2500).fadeOut(400, function () {
+      $(this).remove();                                    // removed from the DOM after it faded out
+    });
+  }
+
+  // Shows how many topics currently have notifications enabled
+  function updateSummary() {
+    $("#summary").text("Active notifications: " + $(".topic.subscribed").length);
+  }
+
+  // ---------- Event handlers (named functions, so .on() and .off() can use them) ----------
+
+  // Scenario 1: Subscribe -> enable notifications for this topic
+  function onSubscribe() {
+    const $topic = $(this).closest(".topic");
+    $topic.addClass("subscribed");
+    $topic.find(".status").text("Notifications ON");
+    $topic.find(".subscribe").prop("disabled", true);      // .prop() changes the "disabled" property
+    $topic.find(".unsubscribe").prop("disabled", false);
+    updateSummary();
+    showMessage("Subscribed to " + $topic.attr("data-topic") + ". Notifications enabled.");
+  }
+
+  // Scenario 2: Unsubscribe -> disable notifications for this topic
+  function onUnsubscribe() {
+    const $topic = $(this).closest(".topic");
+    $topic.removeClass("subscribed");
+    $topic.find(".status").text("Notifications OFF");
+    $topic.find(".subscribe").prop("disabled", false);
+    $topic.find(".unsubscribe").prop("disabled", true);
+    updateSummary();
+    showMessage("Unsubscribed from " + $topic.attr("data-topic") + ". Notifications disabled.");
+  }
+
+  // Scenario 4: Remove a subscription -> detach its events with .off(), then delete the item
+  function onRemove() {
+    const $topic = $(this).closest(".topic");
+    const topicName = $topic.attr("data-topic");
+
+    // .off("click") removes every click handler that .on("click", ...) attached to these buttons
+    $topic.find(".subscribe, .unsubscribe, .remove").off("click");
+
+    $topic.fadeOut(300, function () {
+      $(this).remove();
+      updateSummary();
+    });
+    showMessage('Removed "' + topicName + '". Its click events were detached with .off().');
+  }
+
+  // Attaches the three click events to the buttons of ONE topic item with .on()
+  function bindTopicEvents($topic) {
+    $topic.find(".subscribe").on("click", onSubscribe);
+    $topic.find(".unsubscribe").on("click", onUnsubscribe);
+    $topic.find(".remove").on("click", onRemove);
+  }
+
+  // Attach events to the 5 topics that are already in the page
+  $(".topic").each(function () {
+    bindTopicEvents($(this));
+  });
+
+  // Builds the <li> of a new topic (same structure as the topics in the HTML)
+  function createTopicItem(name) {
+    return $("<li>", { "class": "topic", "data-topic": name }).append(
+      $("<span>", { "class": "topic-name", text: name }),
+      $("<span>", { "class": "status", text: "Notifications OFF" }),
+      $("<span>", { "class": "actions" }).append(
+        $("<button>", { type: "button", "class": "subscribe", text: "Subscribe" }),
+        $("<button>", { type: "button", "class": "unsubscribe", text: "Unsubscribe", disabled: true }),
+        $("<button>", { type: "button", "class": "remove", text: "Remove" })
+      )
+    );
+  }
+
+  // Scenario 3: dynamically add a new topic and attach .on() click events to its buttons
+  $("#addTopicForm").on("submit", function (event) {
+    event.preventDefault();
+    const name = $.trim($("#newTopic").val());
+
+    if (name === "") {
+      showMessage("Please type a topic name first.");
+      return;
+    }
+    // reject a topic that exists already (case-insensitive)
+    const exists = $(".topic").filter(function () {
+      return $(this).attr("data-topic").toLowerCase() === name.toLowerCase();
+    }).length > 0;
+    if (exists) {
+      showMessage('"' + name + '" is already in the list.');
+      return;
+    }
+
+    const $newTopic = createTopicItem(name);
+    $newTopic.hide().appendTo($topicList).fadeIn(300);
+    bindTopicEvents($newTopic);                             // new elements need their events attached
+    $("#newTopic").val("").focus();
+    showMessage('Topic "' + name + '" added.');
+  });
+
+  updateSummary();
+});
+
+HOW TO TEST IT (open q6.html in the browser)
+---------------------------------------------
+1. Click Subscribe on "Tech News": status says Notifications ON, the item
+   turns green, Subscribe is disabled and Unsubscribe is enabled. A success
+   message appears and disappears. The counter becomes 1.
+2. Click Unsubscribe: back to Notifications OFF, counter 0.
+3. Type "Health Tips" and click Add Topic: a new row appears and ITS buttons
+   work too (this proves .on() was attached to the new element).
+4. Click Remove on a topic: it fades away and its events are detached.
+5. Try an empty or a duplicate topic: a message explains why it is refused.
+
+EXPLANATION
+-----------
+Without calling .on() for the new item, its buttons would do nothing. .off()
+cleans up the handlers (good practice to avoid memory leaks). In the test run
+jQuery's internal event store was inspected after Remove and was empty for all
+three buttons, which proves .off() really detached them.
+
+
+
+##########################################################################
+##  Q7.  SEARCH COURSES
+##  FILES: q7.html  +  q7.js
+##########################################################################
+
+PROBLEM
+-------
+Show a list of at least 5 courses. 1) The search box filters in real time
+using .keyup(). 2) Highlight the matched text using .css(). 3) Toggle the
+visibility of non-matching courses. 4) Show a dynamic count of matched courses.
+5) A Clear button resets the list.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* 8 courses; each has a title and a description. The search looks in BOTH.
+* The original text of each title/description is stored with .data("original")
+  once at the start. Every search starts again from this clean text, so old
+  highlights never pile up.
+* Highlight: the text is split with a regular expression that has a capture
+  group, so the matched parts are kept. Matches are wrapped in
+  <span class="match"> and styled with .css({background-color, font-weight}).
+  Text nodes and .text() are used, so typing "<b>" cannot inject HTML. Special
+  regex characters like "(" or "+" are escaped, so they cannot break it.
+* .toggle(isMatch) shows matching courses and hides the others.
+* "Showing X of Y courses" is updated every time; "No courses found" appears
+  when nothing matches.
+* .keyup() is required by the question; an "input" handler is added too, so
+  pasting with the mouse also filters.
+
+CODE - FILE 1 of 2:  q7.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Courses</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f2f4f8; color: #222; margin: 0; }
+    header, footer { background: #2d6cdf; color: #fff; text-align: center; padding: 14px; }
+    header h1 { margin: 0; font-size: 22px; }
+    footer { font-size: 13px; }
+    footer p { margin: 0; }
+    main { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+    section { background: #fff; border-radius: 8px; padding: 18px 22px; margin-bottom: 18px; box-shadow: 0 1px 6px rgba(0,0,0,0.15); }
+    h2 { margin-top: 0; }
+    button { padding: 8px 14px; border: none; border-radius: 4px; background: #2d6cdf; color: #fff; cursor: pointer; font-size: 14px; }
+    button:hover { background: #1f55b8; }
+    button:disabled { background: #aab4c5; cursor: not-allowed; }
+    input[type="text"], input[type="email"], input[type="password"], select { padding: 8px; border: 2px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .search-row { display: flex; gap: 8px; }
+    #searchInput { flex: 1; }
+    #resultCount { font-weight: bold; color: #2d6cdf; margin: 12px 0; }
+    .course { border: 1px solid #dde2ea; border-radius: 6px; padding: 12px 16px; margin-bottom: 10px; background: #fff; }
+    .course h3 { margin: 0 0 6px; font-size: 17px; }
+    .course p { margin: 0; color: #555; font-size: 14px; }
+    #noResults { display: none; text-align: center; color: #d64545; font-weight: bold; padding: 20px; }
+    #clearBtn { background: #777; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Online Learning Platform</h1>
+  </header>
+
+  <main>
+    <section aria-labelledby="searchTitle">
+      <h2 id="searchTitle">Search Courses</h2>
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="Search by course name or description..." autocomplete="off">
+        <button type="button" id="clearBtn">Clear</button>
+      </div>
+      <p id="resultCount" role="status"></p>
+
+      <div id="courseList">
+        <article class="course"><h3 class="course-title">HTML Basics</h3><p class="course-desc">Learn the structure of web pages with semantic HTML5 elements.</p></article>
+        <article class="course"><h3 class="course-title">CSS Fundamentals</h3><p class="course-desc">Style web pages with colours, layouts, flexbox and grid.</p></article>
+        <article class="course"><h3 class="course-title">JavaScript Essentials</h3><p class="course-desc">Variables, functions, objects and the DOM for beginners.</p></article>
+        <article class="course"><h3 class="course-title">jQuery for Beginners</h3><p class="course-desc">Select elements, handle events and create animations with jQuery.</p></article>
+        <article class="course"><h3 class="course-title">React Introduction</h3><p class="course-desc">Build user interfaces with components, props and state.</p></article>
+        <article class="course"><h3 class="course-title">Node.js Backend</h3><p class="course-desc">Create servers and REST APIs using JavaScript on the backend.</p></article>
+        <article class="course"><h3 class="course-title">Python for Data Science</h3><p class="course-desc">Analyse data with Python, lists, functions and simple charts.</p></article>
+        <article class="course"><h3 class="course-title">SQL and Databases</h3><p class="course-desc">Design tables and write queries to store and read data.</p></article>
+      </div>
+      <p id="noResults">No courses found</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Demo Academy</p>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="q7.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q7.js  (the jQuery code of this question)
+------------------------------------------------------------
+$(function () {
+  const $courses = $(".course");
+  const $texts = $courses.find(".course-title, .course-desc");
+
+  // Remember the ORIGINAL text of every title/description. Highlighting changes the
+  // inner HTML, so every search starts again from this clean text.
+  $texts.each(function () {
+    $(this).data("original", $(this).text());
+  });
+
+  // Escapes characters that have a special meaning in a regular expression (. * + ? ( ) etc.)
+  function escapeRegExp(text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  // Writes the text into the element and wraps every match in <span class="match">
+  function highlightText($element, original, query) {
+    $element.empty();
+    if (query === "") {
+      $element.text(original);
+      return;
+    }
+    // split() with a capturing group keeps the matches: odd positions = matched parts
+    const parts = original.split(new RegExp("(" + escapeRegExp(query) + ")", "gi"));
+    $.each(parts, function (index, part) {
+      if (index % 2 === 1) {
+        $("<span>", { "class": "match", text: part }).appendTo($element);
+      } else {
+        $element.append(document.createTextNode(part));    // text nodes: no HTML injection possible
+      }
+    });
+  }
+
+  // Scenarios 1, 2, 3, 4: filter, highlight, toggle visibility, show the count
+  function filterCourses() {
+    const query = $.trim($("#searchInput").val());
+    const lowerQuery = query.toLowerCase();
+    let matchedCount = 0;
+
+    $courses.each(function () {
+      const $course = $(this);
+      let isMatch = (lowerQuery === "");                    // an empty search matches every course
+
+      $course.find(".course-title, .course-desc").each(function () {
+        const original = $(this).data("original");
+        if (lowerQuery !== "" && original.toLowerCase().indexOf(lowerQuery) !== -1) {
+          isMatch = true;
+        }
+        highlightText($(this), original, query);
+      });
+
+      // Scenario 3: toggle(true) shows the course, toggle(false) hides it
+      $course.toggle(isMatch);
+      if (isMatch) matchedCount++;
+    });
+
+    // Scenario 2: highlight the matched text with .css()
+    $(".match").css({ "background-color": "#ffe066", "font-weight": "bold", "padding": "0 2px" });
+
+    // Scenario 4: show the number of matched courses dynamically
+    $("#resultCount").text("Showing " + matchedCount + " of " + $courses.length + " courses");
+    $("#noResults").toggle(matchedCount === 0);
+  }
+
+  // Scenario 1: filter in real time on every key release (.keyup()).
+  // The "input" event is added too, so pasting with the mouse also works.
+  $("#searchInput").keyup(filterCourses).on("input", filterCourses);
+
+  // Scenario 5: Clear -> empty the box and reset the list to show all courses
+  $("#clearBtn").on("click", function () {
+    $("#searchInput").val("").focus();
+    filterCourses();
+  });
+
+  filterCourses();
+});
+
+HOW TO TEST IT (open q7.html in the browser)
+---------------------------------------------
+1. Type "java": JavaScript Essentials and Node.js Backend (its description
+   says JavaScript) stay, "java" is highlighted yellow, the rest hide.
+   The counter says "Showing 2 of 8 courses".
+2. Type "zzz": "No courses found" appears and the count is 0.
+3. Type "c++(": nothing breaks (regex characters are escaped).
+4. Click Clear: the box empties and all 8 courses return without highlights.
+
+EXPLANATION
+-----------
+The search is case-insensitive (the "i" flag and toLowerCase()). Splitting
+by a capture group returns [text, match, text, match, ...], so odd positions
+are the matches. That is why index % 2 === 1 decides which part to wrap.
+
+
+
+##########################################################################
+##  Q8.  DYNAMIC BLOG POSTS
+##  FILES: q8.html  +  q8.js
+##########################################################################
+
+PROBLEM
+-------
+A blog with at least 5 posts. 1) "Add New Post" appends a post.
+2) "Prepend Featured Post" adds one at the top. 3) "Remove Last Post" deletes
+the last element. 4) Add tags to posts using .before() / .after().
+5) Highlight posts with specific keywords dynamically.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* A post is created by createPost(title, isFeatured) with $("<article>")
+  and .text() (safe). An optional title box is used; otherwise an automatic
+  title like "Untitled Post #6" is created.
+* .append() = at the END, .prepend() = at the TOP (featured posts get an
+  orange left border), .children(".post").last().remove() = delete the last.
+* A post is selected by clicking it (one delegated handler on the list, so it
+  also works for posts created later). The tag buttons use
+  $title.before($tag) = tag BEFORE the heading, $title.after($tag) = tag AFTER
+  the heading. If no post is selected or the tag is empty, a message appears.
+* Keyword highlight: .filter(function) keeps the posts whose text contains the
+  keyword (case-insensitive) and .css("background-color", ...) paints them.
+  It runs while typing and also after adding new posts.
+* A counter shows the total number of posts.
+
+CODE - FILE 1 of 2:  q8.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Blog Posts</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f2f4f8; color: #222; margin: 0; }
+    header, footer { background: #2d6cdf; color: #fff; text-align: center; padding: 14px; }
+    header h1 { margin: 0; font-size: 22px; }
+    footer { font-size: 13px; }
+    footer p { margin: 0; }
+    main { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+    section { background: #fff; border-radius: 8px; padding: 18px 22px; margin-bottom: 18px; box-shadow: 0 1px 6px rgba(0,0,0,0.15); }
+    h2 { margin-top: 0; }
+    button { padding: 8px 14px; border: none; border-radius: 4px; background: #2d6cdf; color: #fff; cursor: pointer; font-size: 14px; }
+    button:hover { background: #1f55b8; }
+    button:disabled { background: #aab4c5; cursor: not-allowed; }
+    input[type="text"], input[type="email"], input[type="password"], select { padding: 8px; border: 2px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .panel-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .panel-row label { font-weight: bold; min-width: 90px; }
+    .panel-row input[type="text"] { flex: 1; min-width: 160px; }
+    #adminMessage { color: #2d6cdf; font-weight: bold; min-height: 20px; margin: 8px 0 0; }
+    #postCount { font-weight: bold; margin: 0 0 12px; }
+    .post { border: 2px solid #dde2ea; border-radius: 6px; padding: 12px 16px; margin-bottom: 10px; background: #fff; cursor: pointer; transition: background 0.2s; }
+    .post.selected { border-color: #2d6cdf; box-shadow: 0 0 0 2px #cfe0ff; }
+    .post.featured { border-left: 6px solid #e08a00; }
+    .post h3 { display: inline-block; margin: 0 0 6px; font-size: 18px; }
+    .post p { margin: 6px 0 0; color: #444; font-size: 14px; }
+    .tag { display: inline-block; background: #6f42c1; color: #fff; font-size: 12px; padding: 2px 9px; border-radius: 10px; margin: 0 6px 4px 0; vertical-align: middle; }
+    .tag.after-tag { background: #0d8aa8; margin: 0 0 4px 8px; }
+    #removeLastBtn { background: #d64545; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Blog Admin Panel</h1>
+  </header>
+
+  <main>
+    <section aria-labelledby="postsPanelTitle">
+      <h2 id="postsPanelTitle">Manage Posts</h2>
+      <div class="panel-row">
+        <label for="postTitle">Post title</label>
+        <input type="text" id="postTitle" placeholder="Optional. Leave empty for an automatic title" autocomplete="off">
+      </div>
+      <div class="buttons">
+        <button type="button" id="addPostBtn">Add New Post</button>
+        <button type="button" id="prependPostBtn">Prepend Featured Post</button>
+        <button type="button" id="removeLastBtn">Remove Last Post</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="tagsPanelTitle">
+      <h2 id="tagsPanelTitle">Tags and Keywords</h2>
+      <p>Click a post to select it, then add a tag before or after its title.</p>
+      <div class="panel-row">
+        <label for="tagInput">Tag</label>
+        <input type="text" id="tagInput" placeholder="e.g. tutorial" autocomplete="off">
+        <button type="button" id="tagBeforeBtn">Add Tag Before Title</button>
+        <button type="button" id="tagAfterBtn">Add Tag After Title</button>
+      </div>
+      <div class="panel-row">
+        <label for="keywordInput">Keyword</label>
+        <input type="text" id="keywordInput" placeholder="Highlight posts containing..." autocomplete="off">
+      </div>
+      <p id="adminMessage" role="status"></p>
+    </section>
+
+    <section aria-labelledby="postsTitle">
+      <h2 id="postsTitle">Blog Posts</h2>
+      <p id="postCount"></p>
+      <div id="postList">
+        <article class="post"><h3>Getting Started with jQuery</h3><p>Learn how selectors and events make DOM scripting easy.</p></article>
+        <article class="post"><h3>CSS Grid Made Simple</h3><p>Build two-dimensional layouts without any hacks.</p></article>
+        <article class="post"><h3>JavaScript Event Delegation</h3><p>One listener on a parent can handle many child elements.</p></article>
+        <article class="post"><h3>Why Semantic HTML5 Matters</h3><p>Meaningful tags help accessibility and search engines.</p></article>
+        <article class="post"><h3>Debugging Tips for Beginners</h3><p>Use the browser console and breakpoints to find bugs fast.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Demo Blog</p>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="q8.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q8.js  (the jQuery code of this question)
+------------------------------------------------------------
+$(function () {
+  const $postList = $("#postList");
+  let postNumber = $postList.children(".post").length;      // numbering for automatic titles
+
+  const sampleBodies = [
+    "A short introduction written for the new blog post.",
+    "This post explains an important concept step by step.",
+    "Here are some practical tips that you can try today.",
+    "A quick guide with simple examples and clear code."
+  ];
+
+  function showMessage(text) {
+    $("#adminMessage").text(text);
+  }
+
+  function updatePostCount() {
+    $("#postCount").text("Total posts: " + $postList.children(".post").length);
+  }
+
+  // Builds one <article class="post"> (text() is used, so typed text cannot inject HTML)
+  function createPost(title, isFeatured) {
+    postNumber++;
+    const body = sampleBodies[postNumber % sampleBodies.length];
+    return $("<article>", { "class": "post" + (isFeatured ? " featured" : "") }).append(
+      $("<h3>").text(title),
+      $("<p>").text(body)
+    );
+  }
+
+  function getTitle(prefix) {
+    const typed = $.trim($("#postTitle").val());
+    return typed !== "" ? typed : prefix + " #" + (postNumber + 1);
+  }
+
+  // Scenario 1: "Add New Post" -> .append() puts the new post at the END of the list
+  $("#addPostBtn").on("click", function () {
+    $postList.append(createPost(getTitle("Untitled Post"), false));
+    $("#postTitle").val("");
+    updatePostCount();
+    showMessage("New post added at the end.");
+    applyKeywordHighlight();
+  });
+
+  // Scenario 2: "Prepend Featured Post" -> .prepend() puts the post at the TOP of the list
+  $("#prependPostBtn").on("click", function () {
+    $postList.prepend(createPost(getTitle("Featured Post"), true));
+    $("#postTitle").val("");
+    updatePostCount();
+    showMessage("Featured post added at the top.");
+    applyKeywordHighlight();
+  });
+
+  // Scenario 3: "Remove Last Post" -> :last / .last() selects the last post, .remove() deletes it
+  $("#removeLastBtn").on("click", function () {
+    const $last = $postList.children(".post").last();
+    if ($last.length === 0) {
+      showMessage("There are no posts to remove.");
+      return;
+    }
+    $last.remove();
+    updatePostCount();
+    showMessage("Last post removed.");
+  });
+
+  // Posts are created later, so one delegated click handler selects them.
+  // Only one post can be selected at a time (used by the tag buttons).
+  $postList.on("click", ".post", function () {
+    const wasSelected = $(this).hasClass("selected");
+    $postList.children(".post").removeClass("selected");
+    if (!wasSelected) {
+      $(this).addClass("selected");
+    }
+  });
+
+  // Scenario 4: add a tag to the selected post
+  //   .before() inserts the tag BEFORE the title element, .after() inserts it AFTER the title.
+  function addTag(placement) {
+    const tagText = $.trim($("#tagInput").val());
+    const $post = $postList.children(".post.selected");
+
+    if ($post.length === 0) {
+      showMessage("Select a post first (click on a post).");
+      return;
+    }
+    if (tagText === "") {
+      showMessage("Type a tag first.");
+      return;
+    }
+
+    const $title = $post.children("h3");
+    const $tag = $("<span>", { "class": "tag", text: tagText });
+
+    if (placement === "before") {
+      $title.before($tag);
+    } else {
+      $tag.addClass("after-tag");
+      $title.after($tag);
+    }
+    $("#tagInput").val("");
+    showMessage('Tag "' + tagText + '" added ' + placement + " the title.");
+  }
+
+  $("#tagBeforeBtn").on("click", function () { addTag("before"); });
+  $("#tagAfterBtn").on("click", function () { addTag("after"); });
+
+  // Scenario 5: highlight the posts that contain the typed keyword, updated while typing
+  function applyKeywordHighlight() {
+    const keyword = $.trim($("#keywordInput").val()).toLowerCase();
+    const $posts = $postList.children(".post");
+
+    // .filter(function) keeps only the posts whose text contains the keyword
+    const $matching = $posts.filter(function () {
+      return keyword !== "" && $(this).text().toLowerCase().indexOf(keyword) !== -1;
+    });
+
+    $posts.css("background-color", "");                     // clear old highlights
+    $matching.css("background-color", "#fff3bf");           // highlight matching posts
+
+    if (keyword !== "") {
+      showMessage($matching.length + " post(s) contain \"" + keyword + "\".");
+    }
+  }
+
+  $("#keywordInput").on("keyup input", applyKeywordHighlight);
+
+  updatePostCount();
+});
+
+HOW TO TEST IT (open q8.html in the browser)
+---------------------------------------------
+1. Click "Add New Post": a post appears at the bottom. "Prepend Featured
+   Post": one appears at the top with an orange border.
+2. Click "Remove Last Post": the bottom post disappears. Keep clicking: when
+   the list is empty a message says there is nothing to remove.
+3. Click a post (blue outline), type "tutorial", click "Add Tag Before
+   Title": a purple tag appears before the heading. "Add Tag After Title"
+   puts a blue tag after the heading.
+4. Type "event" in the Keyword box: the 2 posts that contain it turn yellow.
+
+EXPLANATION
+-----------
+before/after insert a SIBLING outside the element, while prepend/append
+insert a CHILD inside it. That is the difference this question is testing.
+Event delegation (one handler on #postList for ".post") is the right tool for
+elements that are created dynamically.
+
+
+
+##########################################################################
+##  Q9.  MULTI-jQUERY WIDGETS (jQuery.noConflict())
+##  FILES: q9.html  +  q9.js
+##########################################################################
+
+PROBLEM
+-------
+A page uses TWO versions of jQuery. 1) Version 1 handles the carousel
+slider rotation. 2) Version 2 manages modal popups for notifications.
+3) Version 1 highlights the active widget. 4) Version 2 attaches tooltips on
+hover. 5) Use jQuery.noConflict() so both versions operate simultaneously.
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Why is this a problem? Every jQuery file writes itself into the global
+  names window.$ and window.jQuery. If two versions are loaded, the one
+  loaded LAST overwrites the first.
+* Loading order: jQuery 1.10.2 (Version 1) first, then jQuery 3.6.0
+  (Version 2), then q9.js.
+* The solution (first lines of q9.js):
+      var $v2 = jQuery.noConflict(true);   // Version 2 = 3.6.0
+      var $v1 = window.jQuery;             // Version 1 = 1.10.2
+  noConflict(true) is called on the LAST loaded copy (3.6.0). It returns that
+  copy (stored in $v2) and gives $ and jQuery back to the copy loaded before
+  it (1.10.2, stored in $v1). Now both versions live in their own variables.
+* Each version's code is wrapped in an IIFE that passes its jQuery in as "$":
+  (function ($) { ... })($v1);   and   (function ($) { ... })($v2);
+  Inside, the familiar $ is used and always means the correct version.
+* Version 1: carousel (auto-rotates every 3 seconds with fade, Previous /
+  Next buttons, pauses on hover) and the active-widget highlight.
+* Version 2: notification modal (opens with fadeIn; closes by the button, by a
+  click on the dark background, or the Esc key) and tooltips from the
+  data-tooltip attribute, positioned with .offset().
+* The header prints both versions, read from .fn.jquery.
+
+CODE - FILE 1 of 2:  q9.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-jQuery Widgets Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f2f4f8; color: #222; margin: 0; }
+    header, footer { background: #2d6cdf; color: #fff; text-align: center; padding: 14px; }
+    header h1 { margin: 0; font-size: 22px; }
+    footer { font-size: 13px; }
+    footer p { margin: 0; }
+    main { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+    section { background: #fff; border-radius: 8px; padding: 18px 22px; margin-bottom: 18px; box-shadow: 0 1px 6px rgba(0,0,0,0.15); }
+    h2 { margin-top: 0; }
+    button { padding: 8px 14px; border: none; border-radius: 4px; background: #2d6cdf; color: #fff; cursor: pointer; font-size: 14px; }
+    button:hover { background: #1f55b8; }
+    button:disabled { background: #aab4c5; cursor: not-allowed; }
+    input[type="text"], input[type="email"], input[type="password"], select { padding: 8px; border: 2px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    #versionInfo { margin: 0; font-size: 14px; }
+    .slides { position: relative; min-height: 110px; }
+    .slide { display: none; color: #fff; padding: 28px; border-radius: 8px; text-align: center; }
+    .slide:first-child { display: block; }
+    .slide h3 { margin: 0 0 6px; font-size: 22px; }
+    .slide p { margin: 0; }
+    .s1 { background: #d64545; } .s2 { background: #2e9e5b; } .s3 { background: #e08a00; } .s4 { background: #6f42c1; } .s5 { background: #0d8aa8; }
+    .carousel-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+    #slideInfo { font-size: 13px; color: #555; }
+    .widgets { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    .widget { border: 2px solid #dde2ea; border-radius: 8px; padding: 14px; cursor: pointer; background: #fff; transition: background 0.2s, border-color 0.2s; }
+    .widget h3 { margin: 0 0 6px; font-size: 17px; }
+    .widget p { margin: 0; color: #555; font-size: 14px; }
+    .widget.active-widget { background: #fff3bf; border-color: #f0b400; }
+    .has-tip { border-bottom: 1px dotted #2d6cdf; }
+    .tooltip { position: absolute; z-index: 20; display: none; background: #222; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 13px; max-width: 240px; pointer-events: none; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10; justify-content: center; align-items: center; }
+    .modal-box { background: #fff; border-radius: 8px; padding: 22px 26px; width: 340px; max-width: 92vw; }
+    .modal-box h3 { margin-top: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Dashboard with Two jQuery Versions</h1>
+    <p id="versionInfo">Loading versions...</p>
+  </header>
+
+  <main>
+    <!-- Version 1 handles the carousel and the active widget -->
+    <section aria-labelledby="carouselTitle">
+      <h2 id="carouselTitle">Carousel <small>(jQuery Version 1)</small></h2>
+      <div class="slides" id="slides">
+        <article class="slide s1"><h3>Slide 1</h3><p>Welcome to the dashboard</p></article>
+        <article class="slide s2"><h3>Slide 2</h3><p>Two jQuery versions, one page</p></article>
+        <article class="slide s3"><h3>Slide 3</h3><p>No conflict between them</p></article>
+        <article class="slide s4"><h3>Slide 4</h3><p>Each version has its own job</p></article>
+        <article class="slide s5"><h3>Slide 5</h3><p>Thank you for visiting</p></article>
+      </div>
+      <div class="carousel-controls">
+        <button type="button" id="prevSlide">Previous</button>
+        <span id="slideInfo">Slide 1 of 5</span>
+        <button type="button" id="nextSlide">Next</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="widgetsTitle">
+      <h2 id="widgetsTitle">Widgets <small>(click = highlight with Version 1, hover = tooltip with Version 2)</small></h2>
+      <div class="widgets">
+        <article class="widget" data-tooltip="Shows today's temperature and rain forecast"><h3>Weather</h3><p>28 C, partly cloudy</p></article>
+        <article class="widget" data-tooltip="Your pending tasks for this week"><h3>Tasks</h3><p>5 tasks pending</p></article>
+        <article class="widget" data-tooltip="Visitors who opened the site today"><h3>Statistics</h3><p>1,240 visitors</p></article>
+        <article class="widget" data-tooltip="Messages waiting in your inbox"><h3>Inbox</h3><p>8 new messages</p></article>
+        <article class="widget" data-tooltip="Next three events from your calendar"><h3>Calendar</h3><p>3 events today</p></article>
+      </div>
+    </section>
+
+    <!-- Version 2 manages the notification modal -->
+    <section aria-labelledby="notifyTitle">
+      <h2 id="notifyTitle">Notifications <small>(jQuery Version 2)</small></h2>
+      <button type="button" id="notifyBtn" data-tooltip="Opens a notification popup">Show Notification</button>
+    </section>
+  </main>
+
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-box" id="modalBox">
+      <h3 id="modalTitle">Notification</h3>
+      <p id="modalText"></p>
+      <button type="button" id="modalClose">Close</button>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 Demo Dashboard</p>
+  </footer>
+
+  <!-- Two copies of jQuery: the OLD version first, then the NEW version -->
+  <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="q9.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q9.js  (the jQuery code of this question)
+------------------------------------------------------------
+// ======================= jQuery.noConflict() =======================
+// Both jQuery files were loaded: 1.10.2 first, then 3.6.0. Every jQuery file
+// writes itself into the global names  window.$  and  window.jQuery,
+// so the file loaded LAST (3.6.0) has replaced the first one.
+//
+// jQuery.noConflict(true) is called on the LAST loaded copy:
+//   1. it RETURNS that copy (3.6.0)  -> we store it in $v2
+//   2. it gives window.$ and window.jQuery BACK to the previously loaded copy (1.10.2)
+// Result: two independent jQuery objects that can be used at the same time.
+var $v2 = jQuery.noConflict(true);   // Version 2 = 3.6.0
+var $v1 = window.jQuery;             // Version 1 = 1.10.2 (restored by noConflict)
+
+// Show which version is which (.fn.jquery contains the version number)
+$v1("#versionInfo").text("Version 1 = jQuery " + $v1.fn.jquery + "   |   Version 2 = jQuery " + $v2.fn.jquery);
+
+
+// ======================= VERSION 1 (1.10.2) =======================
+// The parameter name $ is local to this function, so "$" means Version 1 inside it.
+(function ($) {
+  $(document).ready(function () {
+
+    // Scenario 1: carousel slider rotation (fadeOut / fadeIn every 3 seconds)
+    const $slides = $("#slides .slide");
+    let current = 0;
+    let timer = null;
+
+    function showSlide(newIndex) {
+      const $old = $slides.eq(current);
+      current = (newIndex + $slides.length) % $slides.length;     // wraps around at both ends
+      $old.stop(true, true).fadeOut(300, function () {
+        $slides.eq(current).fadeIn(300);
+        $("#slideInfo").text("Slide " + (current + 1) + " of " + $slides.length);
+      });
+    }
+
+    function startCarousel() {
+      if (timer === null) {
+        timer = setInterval(function () { showSlide(current + 1); }, 3000);
+      }
+    }
+    function stopCarousel() {
+      clearInterval(timer);
+      timer = null;
+    }
+
+    $("#nextSlide").on("click", function () { showSlide(current + 1); });
+    $("#prevSlide").on("click", function () { showSlide(current - 1); });
+    $("#slides").on("mouseenter", stopCarousel).on("mouseleave", startCarousel);   // pause on hover
+    startCarousel();
+
+    // Scenario 3: highlight the active widget (the one that was clicked last)
+    $(".widget").on("click", function () {
+      const wasActive = $(this).hasClass("active-widget");
+      $(".widget").removeClass("active-widget");
+      if (!wasActive) {
+        $(this).addClass("active-widget");
+      }
+    });
+  });
+})($v1);
+
+
+// ======================= VERSION 2 (3.6.0) =======================
+// Here "$" means Version 2.
+(function ($) {
+  $(function () {
+
+    // Scenario 2: modal popup for notifications
+    const notifications = [
+      "You have 3 new messages.",
+      "Your report is ready to download.",
+      "A new login was detected on your account.",
+      "Reminder: team meeting at 4 PM."
+    ];
+    let notificationIndex = 0;
+
+    $("#notifyBtn").on("click", function () {
+      $("#modalText").text(notifications[notificationIndex]);
+      notificationIndex = (notificationIndex + 1) % notifications.length;
+      $("#modal").css("display", "flex").hide().fadeIn(200);     // flex centres the box, fadeIn animates it
+    });
+
+    function closeModal() {
+      $("#modal").fadeOut(200);
+    }
+    $("#modalClose").on("click", closeModal);
+    $("#modal").on("click", closeModal);                          // click on the dark background closes it
+    $("#modalBox").on("click", function (event) {
+      event.stopPropagation();                                    // click inside the box must not close it
+    });
+    $(document).on("keydown", function (event) {
+      if (event.key === "Escape") closeModal();
+    });
+
+    // Scenario 4: tooltips on hover for every element that has a data-tooltip attribute
+    $("[data-tooltip]").on("mouseenter", function () {
+      const $element = $(this);
+      const offset = $element.offset();                           // position of the element in the document
+      $("<div>", { "class": "tooltip", text: $element.attr("data-tooltip") })
+        .css({ top: offset.top + $element.outerHeight() + 8, left: offset.left })
+        .appendTo("body")
+        .fadeIn(120);
+    }).on("mouseleave", function () {
+      $(".tooltip").remove();
+    });
+  });
+})($v2);
+
+HOW TO TEST IT (open q9.html in the browser)
+---------------------------------------------
+1. The header shows "Version 1 = jQuery 1.10.2 | Version 2 = jQuery 3.6.0".
+2. The carousel changes slide every 3 seconds. Previous / Next work.
+3. Click a widget: it turns yellow (active). Click another: it moves.
+4. Hover a widget or the "Show Notification" button: a tooltip appears.
+5. Click "Show Notification": a modal opens. Close it with the button, with
+   Esc, or by clicking the dark area. Clicking inside the white box keeps it
+   open.
+6. In the console type  $.fn.jquery  -> "1.10.2",  $v2.fn.jquery -> "3.6.0".
+
+EXPLANATION
+-----------
+noConflict(true) restores BOTH the $ and the jQuery globals, which is what
+makes the two versions independent (noConflict() with no argument would only
+restore $). In practice, the ordering matters: the version that must keep the
+global names has to be loaded FIRST.
+
+
+
+##########################################################################
+##  Q10.  REGISTRATION FORM VALIDATION
+##  FILES: q10.html  +  q10.js
+##########################################################################
+
+PROBLEM
+-------
+A registration form. 1) Name must not be empty. 2) Email must be in a valid
+format AND unique. 3) Password must be at least 8 characters. 4) Show a
+success message if all fields are valid. 5) Highlight invalid fields with a
+red border using .css().
+
+ANALYSIS (what the question really asks)
+----------------------------------------
+* Fields: Name, Email, Password. The form has novalidate so that our own
+  messages are used instead of the browser's.
+* One validator function per field returns an error message or "".
+* Email: required, must match the pattern name@domain.tld, and must not exist
+  in the registeredEmails array (5 sample accounts, compared in lower case).
+  The page shows these sample emails so that the uniqueness check can be tried.
+* Password: length >= 8 (it is not trimmed, spaces can be part of a password).
+* validateField($input) shows the message under the field and sets
+  .css("border-color", "red") for an invalid field, green for a valid one.
+* Live feedback: after a field was touched (blur or a submit attempt), it is
+  re-checked on every keyup.
+* On submit: preventDefault(); .map() validates ALL fields (no early exit) and
+  .get() turns the result into an array. If no result is false, the email is
+  added to the registered list, the form is reset, the borders are cleared and
+  the success message fades in. Otherwise the first invalid field is focused.
+
+CODE - FILE 1 of 2:  q10.html  (structure + CSS)
+------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registration Form Validation</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f2f4f8; color: #222; margin: 0; }
+    header, footer { background: #2d6cdf; color: #fff; text-align: center; padding: 14px; }
+    header h1 { margin: 0; font-size: 22px; }
+    footer { font-size: 13px; }
+    footer p { margin: 0; }
+    main { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+    section { background: #fff; border-radius: 8px; padding: 18px 22px; margin-bottom: 18px; box-shadow: 0 1px 6px rgba(0,0,0,0.15); }
+    h2 { margin-top: 0; }
+    button { padding: 8px 14px; border: none; border-radius: 4px; background: #2d6cdf; color: #fff; cursor: pointer; font-size: 14px; }
+    button:hover { background: #1f55b8; }
+    button:disabled { background: #aab4c5; cursor: not-allowed; }
+    input[type="text"], input[type="email"], input[type="password"], select { padding: 8px; border: 2px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    form { max-width: 380px; margin: 0 auto; }
+    fieldset { border: none; padding: 0; margin: 0; }
+    legend { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+    .field { margin-bottom: 14px; }
+    label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 5px; }
+    input[type="text"], input[type="email"], input[type="password"] { width: 100%; }
+    .error { color: #d64545; font-size: 12px; min-height: 16px; margin: 4px 0 0; }
+    #successMessage { display: none; margin-top: 14px; padding: 12px; background: #e6f4ea; color: #1e6b34; border-radius: 4px; text-align: center; font-weight: bold; }
+    .hint { font-size: 12px; color: #666; text-align: center; margin-top: 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Create an Account</h1>
+  </header>
+
+  <main>
+    <section aria-labelledby="formTitle">
+      <h2 id="formTitle" hidden>Registration</h2>
+      <form id="registrationForm" novalidate>
+        <fieldset>
+          <legend>Registration</legend>
+
+          <div class="field">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" autocomplete="name">
+            <p class="error"></p>
+          </div>
+
+          <div class="field">
+            <label for="email">Email</label>
+            <input type="text" id="email" name="email" autocomplete="email">
+            <p class="error"></p>
+          </div>
+
+          <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" autocomplete="new-password">
+            <p class="error"></p>
+          </div>
+
+          <button type="submit">Register</button>
+        </fieldset>
+        <p id="successMessage" role="status">Registration successful!</p>
+        <p class="hint">Already registered (for testing the uniqueness check): ansh@example.com, riya@example.com, karan@example.com, meera@example.com, rahul@example.com</p>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Demo Website</p>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="q10.js"></script>
+</body>
+</html>
+
+CODE - FILE 2 of 2:  q10.js  (the jQuery code of this question)
+------------------------------------------------------------
+$(function () {
+  const $form = $("#registrationForm");
+  const $fields = $form.find("input");
+
+  // Emails that are already registered (5 sample accounts). New registrations are added here too.
+  const registeredEmails = [
+    "ansh@example.com", "riya@example.com", "karan@example.com",
+    "meera@example.com", "rahul@example.com"
+  ];
+  const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+  // One validator per field: returns an error message, or "" when the value is valid
+  const validators = {
+    // Scenario 1: name must not be empty
+    name: function (value) {
+      return value === "" ? "Name is required." : "";
+    },
+    // Scenario 2: email must have a valid format AND must be unique
+    email: function (value) {
+      if (value === "") return "Email is required.";
+      if (!emailPattern.test(value)) return "Enter a valid email (name@example.com).";
+      if ($.inArray(value.toLowerCase(), registeredEmails) !== -1) return "This email is already registered.";
+      return "";
+    },
+    // Scenario 3: password must have at least 8 characters
+    password: function (value) {
+      return value.length < 8 ? "Password must be at least 8 characters." : "";
+    }
+  };
+
+  // Checks one input, shows its message and colours its border. Returns true when valid.
+  function validateField($input) {
+    const fieldName = $input.attr("name");
+    // passwords are not trimmed, the other values are
+    const value = fieldName === "password" ? $input.val() : $.trim($input.val());
+    const message = validators[fieldName](value);
+
+    $input.siblings(".error").text(message);
+
+    // Scenario 5: red border for an invalid field with .css(), green for a valid one
+    $input.css("border-color", message === "" ? "#2e9e5b" : "red");
+    return message === "";
+  }
+
+  // Live feedback: a field is re-checked while typing after it was touched once
+  $fields.on("blur", function () {
+    $(this).data("touched", true);
+    validateField($(this));
+  });
+  $fields.on("keyup", function () {
+    $("#successMessage").hide();                            // the old success message is outdated
+    if ($(this).data("touched")) {
+      validateField($(this));
+    }
+  });
+
+  $form.on("submit", function (event) {
+    event.preventDefault();                                 // stop the real form submission
+
+    // map() validates EVERY field (no early exit), so all errors are shown at once
+    const results = $fields.map(function () {
+      $(this).data("touched", true);
+      return validateField($(this));
+    }).get();                                               // .get() turns the jQuery result into a plain array
+
+    const isFormValid = $.inArray(false, results) === -1;
+
+    if (isFormValid) {
+      // Scenario 4: success message
+      registeredEmails.push($.trim($("#email").val()).toLowerCase());   // this email is taken from now on
+      $form[0].reset();
+      $fields.css("border-color", "").data("touched", false);
+      $form.find(".error").text("");
+      $("#successMessage").fadeIn(300);
+    } else {
+      $("#successMessage").hide();
+      $fields.filter(function () {                          // focus the first invalid field
+        return $(this).css("border-color") === "rgb(255, 0, 0)";
+      }).first().focus();
+    }
+  });
+});
+
+HOW TO TEST IT (open q10.html in the browser)
+---------------------------------------------
+1. Click Register with empty fields: all three borders turn red with messages.
+2. Enter name "Ansh", email "abc", password "1234567": the email shows an
+   invalid format message and the password says at least 8 characters.
+3. Enter "ansh@example.com" (or any email in the list): "already registered".
+4. Enter a new email like "new@site.com" and an 8+ character password: the
+   success message "Registration successful!" fades in and the form resets.
+5. Register again with the same new email: now it is "already registered".
+
+EXPLANATION
+-----------
+The uniqueness check uses $.inArray(), which returns -1 when the value is
+not found. A real website must also check uniqueness on the SERVER, because
+JavaScript in the browser can be bypassed; this exercise simulates it with an
+array.
+
+
+
+
+##########################################################################
+#                                                                        #
+#                        END OF ASSIGNMENT 9                             #
+#      Submitted by: Ansh Shukla  |  Roll No: 2415000257                 #
+#                    GLA University, Mathura                             #
+#                                                                        #
+##########################################################################
